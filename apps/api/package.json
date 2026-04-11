@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "db:migrate": "psql \"$DATABASE_URL\" -f src/db/migrations/001_init.sql",
+    "db:migrate": "bash ./scripts/migrate.sh",
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
     "test": "vitest run",
