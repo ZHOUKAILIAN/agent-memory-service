@@ -52,6 +52,7 @@ This service gives all agents a shared, project-scoped memory backend.
 │       ├── src
 │       └── test
 ├── docs
+│   ├── agent-sync-flow-zh.md
 │   ├── api-draft.md
 │   ├── data-model.md
 │   ├── example-requests.md
@@ -59,6 +60,7 @@ This service gives all agents a shared, project-scoped memory backend.
 │   ├── v1-scope.md
 │   └── vision.md
 ├── README.md
+├── README-zh.md
 └── package.json
 ```
 
@@ -109,6 +111,7 @@ The goal is to keep `v1` simple, inspectable, and easy to debug.
 | `POST` | `/projects/:id/context/refresh` | Rebuild and return the same context bundle explicitly |
 
 Example requests live in [docs/example-requests.md](docs/example-requests.md).
+Chinese integration flow notes live in [docs/agent-sync-flow-zh.md](docs/agent-sync-flow-zh.md).
 
 ## Local Development
 

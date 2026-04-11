@@ -52,6 +52,7 @@
 │       ├── src
 │       └── test
 ├── docs
+│   ├── agent-sync-flow-zh.md
 │   ├── api-draft.md
 │   ├── data-model.md
 │   ├── example-requests.md
@@ -110,6 +111,7 @@
 | `POST` | `/projects/:id/context/refresh` | 显式刷新并返回同一套上下文结果 |
 
 示例请求见 [docs/example-requests.md](docs/example-requests.md)。
+接入流程说明见 [docs/agent-sync-flow-zh.md](docs/agent-sync-flow-zh.md)。
 
 ## 本地开发
 
