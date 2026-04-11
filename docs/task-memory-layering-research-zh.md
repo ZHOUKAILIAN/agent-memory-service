@@ -427,6 +427,20 @@ POST /tasks/:taskId/summary/refresh
 
 这样既能吸收 SQLite 的优点，又不会牺牲多端同步。
 
+## 当前采用方案
+
+基于前面的调研，当前建议不再继续纠结“PostgreSQL 还是 SQLite 二选一”，而是直接采用组合方案：
+
+- 服务端共享层：`PostgreSQL`
+- 本地 bridge 层：`SQLite`
+
+这意味着：
+
+- 所有跨 Agent、跨平台、跨设备共享的数据都以服务端 `PostgreSQL` 为准
+- 所有本地缓存、失败补偿、绑定关系、轻量检索都放在 bridge 的 `SQLite` 里
+
+这样既符合主流系统的分层思路，也更适合我们要做的任务同步模型。
+
 ## 当前建议
 
 我建议我们把之前的 `project / task / session` 模型再补成：

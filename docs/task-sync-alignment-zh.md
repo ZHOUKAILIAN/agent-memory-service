@@ -257,6 +257,27 @@
 
 这里先对齐原则，不展开到实现细节。
 
+## 当前技术路线选择
+
+这一点现在先明确下来：
+
+- 服务端共享层使用 `PostgreSQL`
+- 本地 bridge 使用 `SQLite`
+
+原因是：
+
+- 我们要支持跨 Agent、跨平台、跨设备同步
+- 这种场景需要一个稳定的中心共享真相源
+- `PostgreSQL` 更适合承载共享任务数据、并发写入和后续扩展
+- `SQLite` 更适合本地缓存、outbox、context cache、全文检索和离线补偿
+
+所以这里不是二选一，而是分层使用：
+
+```text
+server shared source of truth -> PostgreSQL
+local bridge/cache/outbox -> SQLite
+```
+
 ## 一、同步模型
 
 推荐采用“三段式同步”：
