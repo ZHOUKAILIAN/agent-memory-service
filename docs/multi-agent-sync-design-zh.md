@@ -18,10 +18,19 @@
 - `MCP server`
 - `CLI`
 
+但当前落地建议改成：
+
+```text
+CLI first
+MCP optional later
+```
+
+也就是先用 CLI 打通开始读、结束写、失败补偿这条主链，再按需要补 MCP。
+
 这样不同 Agent 可以按自己的能力接入：
 
-- `Codex` 走 `MCP` 为主，必要时补 `CLI`
-- `Claude Code` 走 `MCP + hooks`
+- `Codex` 走 `CLI + hooks`
+- `Claude Code` 走 `CLI + hooks`
 - `OpenClaw` 走 `CLI wrapper` 或原生插件
 
 服务端本身仍然只负责：
@@ -207,56 +216,64 @@ bridge 应该在本地先做一次裁剪：
 
 也就是说，压缩动作应主要发生在客户端，而不是服务端。
 
-## 为什么要同时提供 MCP 和 CLI
+## 为什么先做 CLI，再考虑 MCP
 
 因为三类 Agent 的集成能力并不一样。
+
+### CLI 的优势
+
+- 最容易先打通端到端闭环
+- 适合 wrapper、hook、脚本、CI
+- 不依赖 Agent 一定支持 MCP
+- 更适合从外部运行时接入
 
 ### MCP 的优势
 
 - 对支持 MCP 的 Agent 来说接入更自然
 - 可以暴露标准工具和资源
-- 更适合“任务开始读 context、任务中手动触发 checkpoint”
+- 更适合“任务中途主动搜索 detail memory”
 
-### CLI 的优势
-
-- 适合 wrapper、hook、脚本、CI
-- 不依赖 Agent 一定支持 MCP
-- 更适合从外部运行时接入
-
-所以推荐不是二选一，而是两者都做：
+所以推荐不是不要 MCP，而是调整优先级：
 
 - `agent-memory-mcp`
 - `agent-memory` CLI
+
+但实现顺序建议是：
+
+1. 先做 `agent-memory` CLI
+2. 再做 hooks / scripts
+3. 后面有明确需求时再补 `agent-memory-mcp`
 
 ## 面向不同 Agent 的建议接入方式
 
 ### `Codex`
 
-推荐优先使用 `MCP`。
+推荐先使用 `CLI + hooks`。
 
 做法：
 
-- 在 Codex 配置里注册 `agent-memory-mcp`
-- 在项目级说明文件里要求任务开始先读 context
-- 在阶段性收尾时调用 checkpoint 工具
+- 在 `AGENTS.md` 里写清楚任务开始先读 context
+- 用 hooks 或 wrapper 在 session 开始和结束时调用 CLI
+- 在阶段性收尾时执行 checkpoint 命令
 
-Codex 侧不强依赖底层 runtime hook，而是依赖：
+Codex 侧当前更适合依赖：
 
-- MCP 工具
+- CLI 命令
 - 项目说明
+- hooks
 - 必要时的 wrapper 命令
 
 这样实现更稳，不容易被某个特定运行时细节绑死。
 
-如果后面需要更高自动化，也可以再补 Codex hooks，把读取 context 和写 checkpoint 的动作部分前移到运行时事件里。
+如果后面需要 Agent 在任务中途主动搜索 detail memory，再补 MCP。
 
 ### `Claude Code`
 
-推荐使用 `MCP + hooks`。
+推荐使用 `CLI + hooks`。
 
 做法：
 
-- 用 MCP 提供读写工具
+- 用 CLI 提供读写命令
 - 用 Claude Code hooks 在 session 开始和结束时自动触发脚本
 
 其中 Claude Code 的 hooks 更适合自动做：
@@ -265,6 +282,8 @@ Codex 侧不强依赖底层 runtime hook，而是依赖：
 - Stop / SubagentStop / Session End 时写 checkpoint
 
 这样用户平时基本不需要额外提醒它“去同步”。
+
+如果后面需要在对话中主动调用 detail memory，再补 MCP。
 
 ### `OpenClaw`
 
@@ -278,9 +297,9 @@ Codex 侧不强依赖底层 runtime hook，而是依赖：
 
 如果后面 OpenClaw 提供更稳定的插件机制，再补原生集成。
 
-## 推荐提供的 MCP 工具
+## 后续可提供的 MCP 工具
 
-建议 bridge 暴露这几个工具：
+如果后面需要补 MCP，建议 bridge 暴露这几个工具：
 
 - `resolve_project`
 - `read_context`
@@ -424,20 +443,24 @@ agent-memory flush-outbox
 
 再做：
 
+- Codex hooks 示例
+- Claude Code hooks 示例
+- 更完整的 wrapper / script
+
+这个阶段先把 `CLI + hooks` 的体验做顺。
+
+### Phase 3
+
+按需补：
+
 - `agent-memory-mcp`
 - `read_context`
 - `checkpoint`
 - `upsert_memory_block`
 
-这个阶段让 `Codex` 和 `Claude Code` 开始通过 MCP 接入。
-
-### Phase 3
-
-最后再补：
-
-- Claude Code hooks 示例
-- Codex 项目模板说明
 - 更完整的红线过滤和体积控制
+
+这个阶段只在明确需要 Agent 中途主动检索时再做。
 
 ## 这个设计解决了什么问题
 
@@ -455,7 +478,8 @@ agent-memory flush-outbox
 1. `POST /projects/resolve`
 2. `checkpoint` 聚合接口
 3. `agent-memory` CLI
-4. `agent-memory-mcp`
+4. hooks / wrapper
+5. `agent-memory-mcp`
 
 先把“项目解析 + 结束交接”这条链打通，后面再逐步自动化。
 

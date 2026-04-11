@@ -317,11 +317,22 @@ bridge 提供：
 - CLI
 - MCP server
 
+但当前建议的优先级是：
+
+```text
+CLI first
+MCP optional later
+```
+
+也就是说，第一阶段先用 `CLI + wrapper + hooks/scripts` 打通同步闭环，等后面确实需要模型在任务中途主动搜索 detail memory，再补 MCP。
+
 不同 Agent 的接入方式：
 
-- Codex：`AGENTS.md + MCP + hooks`
-- Claude Code：`CLAUDE.md + MCP + hooks`
+- Codex：`AGENTS.md + CLI + hooks`
+- Claude Code：`CLAUDE.md + CLI + hooks`
 - OpenClaw：`CLI wrapper + 后续原生集成`
+
+MCP 放到后续阶段，作为增强能力，而不是第一阶段必做项。
 
 ## 当前不做什么
 
@@ -355,14 +366,23 @@ bridge 提供：
 
 ### Phase 3
 
-做 MCP 和 hooks：
+补 hooks 和更顺手的 CLI 自动化：
+
+- Codex hooks
+- Claude Code hooks
+- pre-run / post-run scripts
+- `flush_outbox`
+
+### Phase 4
+
+再看是否需要 MCP：
 
 - `read_context`
 - `load_memory_detail`
 - `checkpoint`
-- `flush_outbox`
+- MCP server
 
-### Phase 4
+### Phase 5
 
 做自动提取和审核：
 
@@ -385,4 +405,4 @@ bridge 提供：
 - raw event 只追溯
 - PostgreSQL 做共享真相源
 - SQLite 做本地 bridge
-- MCP + CLI 做统一接入
+- CLI 先落地，MCP 后补
