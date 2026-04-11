@@ -56,6 +56,7 @@ This service gives all agents a shared, project-scoped memory backend.
 │   ├── api-draft.md
 │   ├── data-model.md
 │   ├── example-requests.md
+│   ├── multi-agent-sync-design-zh.md
 │   ├── use-cases.md
 │   ├── v1-scope.md
 │   └── vision.md
@@ -112,6 +113,7 @@ The goal is to keep `v1` simple, inspectable, and easy to debug.
 
 Example requests live in [docs/example-requests.md](docs/example-requests.md).
 Chinese integration flow notes live in [docs/agent-sync-flow-zh.md](docs/agent-sync-flow-zh.md).
+Chinese multi-agent integration design lives in [docs/multi-agent-sync-design-zh.md](docs/multi-agent-sync-design-zh.md).
 
 ## Local Development
 

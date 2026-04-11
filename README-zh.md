@@ -56,6 +56,7 @@
 │   ├── api-draft.md
 │   ├── data-model.md
 │   ├── example-requests.md
+│   ├── multi-agent-sync-design-zh.md
 │   ├── use-cases.md
 │   ├── v1-scope.md
 │   └── vision.md
@@ -112,6 +113,7 @@
 
 示例请求见 [docs/example-requests.md](docs/example-requests.md)。
 接入流程说明见 [docs/agent-sync-flow-zh.md](docs/agent-sync-flow-zh.md)。
+多 Agent 接入设计见 [docs/multi-agent-sync-design-zh.md](docs/multi-agent-sync-design-zh.md)。
 
 ## 本地开发
 
