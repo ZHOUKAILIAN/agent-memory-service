@@ -48,6 +48,9 @@ This service gives all agents a shared, project-scoped memory backend.
 ```text
 .
 ├── apps
+│   ├── cli
+│   │   ├── src
+│   │   └── test
 │   └── api
 │       ├── src
 │       └── test
@@ -146,10 +149,56 @@ The API starts on `http://localhost:3000`.
 ### Useful Commands
 
 ```bash
+pnpm -C apps/cli test
 pnpm -C apps/api dev
 pnpm -C apps/api test
 pnpm -C apps/api typecheck
 pnpm -C apps/api db:migrate
+```
+
+## Minimal CLI Flow
+
+You can now validate the sync loop with the CLI-first path.
+
+Set the service base URL:
+
+```bash
+export AGENT_MEMORY_BASE_URL="http://localhost:3000"
+```
+
+Bind the current workspace the first time:
+
+```bash
+pnpm -C apps/cli start -- resolve --name demo-task
+```
+
+This resolves or creates:
+
+- one `project` for the current workspace
+- one `task` inside that project for the current requirement
+
+The local binding and retry outbox are stored in `.agent-memory/bridge.sqlite` under the workspace root.
+
+Read the current context:
+
+```bash
+pnpm -C apps/cli start -- context
+```
+
+Write a checkpoint:
+
+```bash
+pnpm -C apps/cli start -- checkpoint \
+  --summary "Finished callback URL validation" \
+  --status "in_progress" \
+  --decision "Only trust server-side callback validation" \
+  --next-step "Add redirect automation tests"
+```
+
+Retry queued events later if the network was down:
+
+```bash
+pnpm -C apps/cli start -- flush-outbox
 ```
 
 ## Testing
@@ -166,13 +215,14 @@ The current test suite covers:
 Run everything with:
 
 ```bash
+pnpm -C apps/cli test
 pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
 
 ## Current Status
 
-`v1` is implemented as a single Fastify API service with repository abstractions, deterministic context assembly, PostgreSQL migration scaffolding, and endpoint tests.
+`v1` is implemented as a single Fastify API service plus a CLI-first local bridge. The runtime model is now `project -> task`, with PostgreSQL as the shared source of truth and local SQLite for workspace binding and offline retry.
 
 The main remaining runtime step outside this repository is providing a real `DATABASE_URL` and PostgreSQL instance for end-to-end local bring-up.
 

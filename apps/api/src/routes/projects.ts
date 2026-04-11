@@ -6,7 +6,7 @@ import type { ConversationRepository } from "../modules/conversations/conversati
 import type { ContextService } from "../modules/context/context-service.js";
 import { createMemoryBlockSchema } from "../modules/memory/memory-schema.js";
 import type { MemoryRepository } from "../modules/memory/memory-repository.js";
-import { createProjectSchema } from "../modules/projects/project-schema.js";
+import { createProjectSchema, resolveProjectSchema } from "../modules/projects/project-schema.js";
 import type { ProjectRepository } from "../modules/projects/project-repository.js";
 
 const contextQuerySchema = z.object({
@@ -26,6 +26,29 @@ export function registerProjectRoutes(app: FastifyInstance, dependencies: Projec
     const project = await dependencies.projectRepository.createProject(payload);
 
     return reply.code(201).send({ project });
+  });
+
+  app.post("/projects/resolve", async (request, reply) => {
+    const payload = resolveProjectSchema.parse(request.body);
+
+    if (payload.repo_url && dependencies.projectRepository.findProjectByRepoUrl) {
+      const existingByRepoUrl = await dependencies.projectRepository.findProjectByRepoUrl(payload.repo_url);
+
+      if (existingByRepoUrl) {
+        return reply.code(200).send({ project: existingByRepoUrl });
+      }
+    }
+
+    if (dependencies.projectRepository.findProjectByName) {
+      const existingByName = await dependencies.projectRepository.findProjectByName(payload.name);
+
+      if (existingByName) {
+        return reply.code(200).send({ project: existingByName });
+      }
+    }
+
+    const project = await dependencies.projectRepository.createProject(payload);
+    return reply.code(200).send({ project });
   });
 
   app.post("/projects/:id/conversations", async (request, reply) => {

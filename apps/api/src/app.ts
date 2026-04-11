@@ -8,14 +8,27 @@ import {
 import { contextService, type ContextService } from "./modules/context/context-service.js";
 import { createUnavailableMemoryRepository, type MemoryRepository } from "./modules/memory/memory-repository.js";
 import { createUnavailableProjectRepository, type ProjectRepository } from "./modules/projects/project-repository.js";
+import {
+  createUnavailableTaskCheckpointRepository,
+  type TaskCheckpointRepository
+} from "./modules/tasks/task-checkpoint-repository.js";
+import { createUnavailableTaskRepository, type TaskRepository } from "./modules/tasks/task-repository.js";
+import {
+  createUnavailableTaskSummaryRepository,
+  type TaskSummaryRepository
+} from "./modules/tasks/task-summary-repository.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerProjectRoutes } from "./routes/projects.js";
+import { registerTaskRoutes } from "./routes/tasks.js";
 
 export type AppDependencies = {
   conversationRepository: ConversationRepository;
   contextService: ContextService;
   memoryRepository: MemoryRepository;
   projectRepository: ProjectRepository;
+  taskCheckpointRepository: TaskCheckpointRepository;
+  taskRepository: TaskRepository;
+  taskSummaryRepository: TaskSummaryRepository;
 };
 
 export function buildApp(overrides: Partial<AppDependencies> = {}) {
@@ -25,7 +38,12 @@ export function buildApp(overrides: Partial<AppDependencies> = {}) {
       overrides.conversationRepository ?? createUnavailableConversationRepository(),
     contextService: overrides.contextService ?? contextService,
     memoryRepository: overrides.memoryRepository ?? createUnavailableMemoryRepository(),
-    projectRepository: overrides.projectRepository ?? createUnavailableProjectRepository()
+    projectRepository: overrides.projectRepository ?? createUnavailableProjectRepository(),
+    taskCheckpointRepository:
+      overrides.taskCheckpointRepository ?? createUnavailableTaskCheckpointRepository(),
+    taskRepository: overrides.taskRepository ?? createUnavailableTaskRepository(),
+    taskSummaryRepository:
+      overrides.taskSummaryRepository ?? createUnavailableTaskSummaryRepository()
   };
 
   app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
@@ -49,6 +67,7 @@ export function buildApp(overrides: Partial<AppDependencies> = {}) {
 
   registerHealthRoutes(app);
   registerProjectRoutes(app, dependencies);
+  registerTaskRoutes(app, dependencies);
 
   return app;
 }

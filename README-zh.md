@@ -48,6 +48,9 @@
 ```text
 .
 ├── apps
+│   ├── cli
+│   │   ├── src
+│   │   └── test
 │   └── api
 │       ├── src
 │       └── test
@@ -146,10 +149,56 @@ pnpm -C apps/api dev
 ### 常用命令
 
 ```bash
+pnpm -C apps/cli test
 pnpm -C apps/api dev
 pnpm -C apps/api test
 pnpm -C apps/api typecheck
 pnpm -C apps/api db:migrate
+```
+
+## CLI 最小闭环
+
+当前已经可以先用 `CLI-first` 方式跑最小同步流程。
+
+先设置服务地址：
+
+```bash
+export AGENT_MEMORY_BASE_URL="http://localhost:3000"
+```
+
+第一次在某个工作区里绑定：
+
+```bash
+pnpm -C apps/cli start -- resolve --name demo-task
+```
+
+这一步会 resolve 或创建：
+
+- 当前工作区对应的一个 `project`
+- 当前需求对应的一个 `task`
+
+本地绑定关系和失败重试队列会存到工作区根目录的 `.agent-memory/bridge.sqlite`。
+
+读取当前上下文：
+
+```bash
+pnpm -C apps/cli start -- context
+```
+
+写一条 checkpoint：
+
+```bash
+pnpm -C apps/cli start -- checkpoint \
+  --summary "完成 callback URL 校验" \
+  --status "in_progress" \
+  --decision "只信任服务端 callback 校验" \
+  --next-step "补充 redirect 自动化测试"
+```
+
+如果网络失败，可以后续补传：
+
+```bash
+pnpm -C apps/cli start -- flush-outbox
 ```
 
 ## 测试覆盖
@@ -166,13 +215,14 @@ pnpm -C apps/api db:migrate
 运行方式：
 
 ```bash
+pnpm -C apps/cli test
 pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
 
 ## 当前状态
 
-`v1` 已经实现为一个单体 Fastify API 服务，包含 repository abstraction、确定性的 context 组装逻辑、PostgreSQL migration 脚手架，以及端点级自动化测试。
+`v1` 已经实现为一个 Fastify API 服务，加上一套 CLI-first 本地桥接。运行时模型已经升级为 `project -> task`，其中 PostgreSQL 是共享事实源，本地 SQLite 负责工作区绑定和离线失败重试。
 
 当前主要还差的运行时外部条件，是提供真实的 `DATABASE_URL` 和 PostgreSQL 实例，完成端到端本地联调。
 

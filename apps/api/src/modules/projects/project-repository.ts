@@ -16,6 +16,8 @@ export type ProjectRecord = {
 export interface ProjectRepository {
   createProject(input: CreateProjectInput): Promise<ProjectRecord>;
   getProjectById(projectId: string): Promise<ProjectRecord | null>;
+  findProjectByName?(name: string): Promise<ProjectRecord | null>;
+  findProjectByRepoUrl?(repoUrl: string): Promise<ProjectRecord | null>;
 }
 
 export function createUnavailableProjectRepository(): ProjectRepository {
@@ -24,6 +26,12 @@ export function createUnavailableProjectRepository(): ProjectRepository {
       throw new Error("project repository is not configured");
     },
     async getProjectById() {
+      throw new Error("project repository is not configured");
+    },
+    async findProjectByName() {
+      throw new Error("project repository is not configured");
+    },
+    async findProjectByRepoUrl() {
       throw new Error("project repository is not configured");
     }
   };
@@ -67,6 +75,34 @@ export function createPostgresProjectRepository(pool: Pool): ProjectRepository {
           where id = $1
         `,
         [projectId]
+      );
+
+      return result.rows[0] ?? null;
+    },
+    async findProjectByName(name) {
+      const result = await pool.query<ProjectRecord>(
+        `
+          select id, name, description, repo_url, created_at, updated_at
+          from projects
+          where name = $1
+          order by updated_at desc
+          limit 1
+        `,
+        [name]
+      );
+
+      return result.rows[0] ?? null;
+    },
+    async findProjectByRepoUrl(repoUrl) {
+      const result = await pool.query<ProjectRecord>(
+        `
+          select id, name, description, repo_url, created_at, updated_at
+          from projects
+          where repo_url = $1
+          order by updated_at desc
+          limit 1
+        `,
+        [repoUrl]
       );
 
       return result.rows[0] ?? null;

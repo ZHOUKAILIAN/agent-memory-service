@@ -3,7 +3,9 @@
   "private": true,
   "packageManager": "pnpm@10.32.1",
   "scripts": {
-    "test": "pnpm -C apps/api test",
+    "cli:test": "pnpm -C apps/cli test",
+    "typecheck": "pnpm -C apps/cli typecheck && pnpm -C apps/api typecheck",
+    "test": "pnpm -C apps/cli test && pnpm -C apps/api test",
     "dev": "pnpm -C apps/api dev"
   }
 }

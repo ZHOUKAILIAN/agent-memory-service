@@ -6,4 +6,7 @@ export const createProjectSchema = z.object({
   repo_url: z.string().url().optional()
 });
 
+export const resolveProjectSchema = createProjectSchema;
+
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type ResolveProjectInput = z.infer<typeof resolveProjectSchema>;
