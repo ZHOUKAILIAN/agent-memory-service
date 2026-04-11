@@ -79,3 +79,55 @@ test("resolve creates and stores a workspace binding", async () => {
     task_title: "demo-task"
   });
 });
+
+test("resolve respects --workspace when invoked from another cwd", async () => {
+  const writes: string[] = [];
+  const tempDir = await mkdtemp(path.join(tmpdir(), "agent-memory-target-"));
+  const launcherDir = await mkdtemp(path.join(tmpdir(), "agent-memory-launcher-"));
+
+  const exitCode = await runCli(["resolve", "--workspace", tempDir, "--name", "demo-task"], {
+    cwd: launcherDir,
+    apiClient: {
+      resolveProject: async (input) => ({
+        id: "prj_456",
+        name: input.name,
+        description: input.description,
+        repo_url: input.repo_url ?? null,
+        created_at: "2026-04-11T12:00:00.000Z",
+        updated_at: "2026-04-11T12:00:00.000Z"
+      }),
+      resolveTask: async (input) => ({
+        id: "tsk_456",
+        project_id: input.project_id,
+        title: input.title,
+        description: input.description,
+        source: input.source,
+        external_ref: input.external_ref ?? null,
+        created_at: "2026-04-11T12:00:00.000Z",
+        updated_at: "2026-04-11T12:00:00.000Z"
+      })
+    },
+    writeStdout: (chunk) => writes.push(chunk),
+    writeStderr: (chunk) => writes.push(chunk)
+  });
+
+  assert.equal(exitCode, 0);
+  assert.match(writes.join(""), /prj_456/);
+  assert.match(writes.join(""), /tsk_456/);
+
+  const database = new DatabaseSync(path.join(tempDir, ".agent-memory", "bridge.sqlite"));
+  const row = database
+    .prepare("select workspace_path, project_id, task_id from workspace_bindings where workspace_path = ?")
+    .get(tempDir) as {
+      workspace_path: string;
+      project_id: string;
+      task_id: string;
+    } | undefined;
+  database.close();
+
+  assert.deepEqual({ ...row }, {
+    workspace_path: tempDir,
+    project_id: "prj_456",
+    task_id: "tsk_456"
+  });
+});

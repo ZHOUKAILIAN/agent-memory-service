@@ -47,7 +47,7 @@ export AGENT_MEMORY_BASE_URL="http://60.204.233.73:32117/agent-memory"
 第一次把当前项目和当前任务绑定到服务：
 
 ```bash
-pnpm -C apps/cli start -- resolve \
+pnpm -C apps/cli start resolve --workspace "$PWD" \
   --project-name "openclaw-sync-demo" \
   --project-description "OpenClaw / Codex / Claude Code shared memory demo" \
   --name "实现任务记忆同步" \
@@ -77,13 +77,13 @@ pnpm -C apps/cli start -- resolve \
 读取当前任务上下文：
 
 ```bash
-pnpm -C apps/cli start -- context
+pnpm -C apps/cli start context --workspace "$PWD"
 ```
 
 写入一条 checkpoint：
 
 ```bash
-pnpm -C apps/cli start -- checkpoint \
+pnpm -C apps/cli start checkpoint --workspace "$PWD" \
   --summary "已经完成任务记忆服务部署" \
   --status "in_progress" \
   --decision "先走 CLI-first，再考虑 MCP" \
@@ -94,7 +94,7 @@ pnpm -C apps/cli start -- checkpoint \
 如果当时网络异常，本地会先进入 outbox，之后补传：
 
 ```bash
-pnpm -C apps/cli start -- flush-outbox
+pnpm -C apps/cli start flush-outbox --workspace "$PWD"
 ```
 
 ## HTTP 直接调用示例

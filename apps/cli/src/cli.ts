@@ -13,13 +13,17 @@ export type CliIo = {
   writeStderr?: (chunk: string) => void;
 };
 
-const helpText = "Commands: resolve, context, checkpoint, flush-outbox\n";
+const helpText = "Commands: resolve, context, checkpoint, flush-outbox\nGlobal flags: --workspace <path>\n";
 
 export async function runCli(argv: string[], io: CliIo = {}) {
   const writeStdout = io.writeStdout ?? ((chunk: string) => process.stdout.write(chunk));
   const writeStderr = io.writeStderr ?? ((chunk: string) => process.stderr.write(chunk));
   const command = argv[0] ?? "help";
-  const cwd = io.cwd ?? process.cwd();
+  const flags = parseFlags(argv.slice(1));
+  const cwd = flags.get("workspace")?.[0]
+    ?? io.env?.AGENT_MEMORY_WORKSPACE
+    ?? io.cwd
+    ?? process.cwd();
   const apiClient = {
     ...createHttpApiClient(getBaseUrl(io.env)),
     ...io.apiClient
@@ -31,7 +35,7 @@ export async function runCli(argv: string[], io: CliIo = {}) {
   }
 
   if (command === "resolve") {
-    return await resolveCommand(parseFlags(argv.slice(1)), {
+    return await resolveCommand(flags, {
       apiClient,
       cwd,
       writeStdout
@@ -39,7 +43,7 @@ export async function runCli(argv: string[], io: CliIo = {}) {
   }
 
   if (command === "context") {
-    return await contextCommand(parseFlags(argv.slice(1)), {
+    return await contextCommand(flags, {
       apiClient,
       cwd,
       writeStdout,
@@ -48,7 +52,7 @@ export async function runCli(argv: string[], io: CliIo = {}) {
   }
 
   if (command === "checkpoint") {
-    return await checkpointCommand(parseFlags(argv.slice(1)), {
+    return await checkpointCommand(flags, {
       apiClient,
       cwd,
       writeStdout,
@@ -57,7 +61,7 @@ export async function runCli(argv: string[], io: CliIo = {}) {
   }
 
   if (command === "flush-outbox") {
-    return await flushOutboxCommand(parseFlags(argv.slice(1)), {
+    return await flushOutboxCommand(flags, {
       apiClient,
       cwd,
       writeStdout,

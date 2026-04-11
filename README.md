@@ -169,7 +169,7 @@ export AGENT_MEMORY_BASE_URL="http://localhost:3000"
 Bind the current workspace the first time:
 
 ```bash
-pnpm -C apps/cli start -- resolve --name demo-task
+pnpm -C apps/cli start resolve --workspace "$PWD" --name demo-task
 ```
 
 This resolves or creates:
@@ -182,13 +182,13 @@ The local binding and retry outbox are stored in `.agent-memory/bridge.sqlite` u
 Read the current context:
 
 ```bash
-pnpm -C apps/cli start -- context
+pnpm -C apps/cli start context --workspace "$PWD"
 ```
 
 Write a checkpoint:
 
 ```bash
-pnpm -C apps/cli start -- checkpoint \
+pnpm -C apps/cli start checkpoint --workspace "$PWD" \
   --summary "Finished callback URL validation" \
   --status "in_progress" \
   --decision "Only trust server-side callback validation" \
@@ -198,7 +198,7 @@ pnpm -C apps/cli start -- checkpoint \
 Retry queued events later if the network was down:
 
 ```bash
-pnpm -C apps/cli start -- flush-outbox
+pnpm -C apps/cli start flush-outbox --workspace "$PWD"
 ```
 
 ## Testing

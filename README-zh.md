@@ -169,7 +169,7 @@ export AGENT_MEMORY_BASE_URL="http://localhost:3000"
 第一次在某个工作区里绑定：
 
 ```bash
-pnpm -C apps/cli start -- resolve --name demo-task
+pnpm -C apps/cli start resolve --workspace "$PWD" --name demo-task
 ```
 
 这一步会 resolve 或创建：
@@ -182,13 +182,13 @@ pnpm -C apps/cli start -- resolve --name demo-task
 读取当前上下文：
 
 ```bash
-pnpm -C apps/cli start -- context
+pnpm -C apps/cli start context --workspace "$PWD"
 ```
 
 写一条 checkpoint：
 
 ```bash
-pnpm -C apps/cli start -- checkpoint \
+pnpm -C apps/cli start checkpoint --workspace "$PWD" \
   --summary "完成 callback URL 校验" \
   --status "in_progress" \
   --decision "只信任服务端 callback 校验" \
@@ -198,7 +198,7 @@ pnpm -C apps/cli start -- checkpoint \
 如果网络失败，可以后续补传：
 
 ```bash
-pnpm -C apps/cli start -- flush-outbox
+pnpm -C apps/cli start flush-outbox --workspace "$PWD"
 ```
 
 ## 测试覆盖
