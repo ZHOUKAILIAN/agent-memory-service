@@ -4,6 +4,6 @@ dist
 .env.*
 coverage
 .DS_Store
-pnpm-lock.yaml
+.ai_company_state/
 yarn.lock
 package-lock.json

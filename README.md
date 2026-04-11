@@ -1,72 +1,41 @@
 # project-memory-service
 
-Shared project memory service for multi-agent collaboration.
+Shared project memory for multi-agent software work.
 
-`project-memory-service` is a shared memory layer for agents working on the same engineering task across devices and sessions. It stores both raw conversation events and structured project memory, then returns a compact context bundle that helps the next agent continue work without needing the user to restate the full background.
+`project-memory-service` is a small HTTP service that helps multiple agents continue the same engineering task across sessions, devices, and tools. It stores both raw conversation history and structured project memory, then assembles a compact context bundle so the next agent can pick up the work without replaying the whole transcript.
 
-## Problem
+## Why This Exists
 
-Today, agent memory is fragmented by client and session:
+Agent work is often fragmented:
 
-- A local coding session may accumulate useful context that never reaches a mobile agent.
-- A phone-based follow-up may require the user to restate the project background, constraints, and latest decisions.
-- Important engineering context often lives only inside chat history, which is hard to reuse across tools.
+- one coding session has important decisions that never reach the next runtime
+- mobile or follow-up agents need the user to restate background and status
+- useful context is trapped inside long transcripts instead of reusable memory
 
-## Product Direction
+This service gives all agents a shared, project-scoped memory backend.
 
-The first version focuses on a generic HTTP API instead of a specific client integration. Any agent or tool can write project memory and fetch a context bundle by `project_id`.
+## What V1 Ships
 
-The service treats two memory forms as first-class data:
+- Project creation with stable `project_id`
+- Conversation ingestion for raw messages and tool events
+- Structured memory block upsert for background, constraints, decisions, todo, and status
+- Deterministic context bundle assembly
+- Explicit context refresh endpoint
+- PostgreSQL migration scaffold
+- Automated API tests
 
-- Raw conversation records
-- Structured project memory such as background, constraints, decisions, todo items, and current status
+## What V1 Does Not Ship
 
-When an agent requests context, the service returns structured memory first and supplements it with relevant conversation summaries.
+- Authentication or permissions
+- Vector search or semantic retrieval
+- Web dashboard
+- SDKs for specific agent vendors
+- Background workers or async indexing
 
-## V1 Goals
+## Tech Stack
 
-- Create a project-scoped shared memory service
-- Accept raw conversation and tool-result ingestion from any agent
-- Store structured project memory blocks
-- Assemble a reusable context bundle for the next agent session
-- Keep the initial API and storage model simple enough to iterate quickly
-
-## V1 Non-Goals
-
-- Full agent authentication and enterprise-grade authorization
-- Vector database integration
-- Web admin console
-- Billing, quotas, or multi-tenant organization management
-- Deep vendor-specific SDK integrations
-
-## Core Concepts
-
-### `Project`
-
-The boundary for a requirement, codebase, or ongoing engineering thread.
-
-### `ConversationEntry`
-
-A raw message, tool result, or summary event produced by an agent.
-
-### `MemoryBlock`
-
-A structured memory record attached to a project. Initial block types:
-
-- `background`
-- `constraints`
-- `decisions`
-- `todo`
-- `status`
-
-### `ContextBundle`
-
-The assembled response that an agent requests before continuing work. It prioritizes structured memory and includes a selected slice of supporting conversation history.
-
-## Proposed Initial Stack
-
-- TypeScript
 - Node.js
+- TypeScript
 - Fastify
 - PostgreSQL
 - Zod
@@ -76,18 +45,126 @@ The assembled response that an agent requests before continuing work. It priorit
 
 ```text
 .
-├── README.md
+├── apps
+│   └── api
+│       ├── src
+│       └── test
 ├── docs
 │   ├── api-draft.md
 │   ├── data-model.md
+│   ├── example-requests.md
 │   ├── use-cases.md
 │   ├── v1-scope.md
-│   ├── vision.md
-│   └── superpowers
-│       ├── plans
-│       └── specs
+│   └── vision.md
+├── README.md
+└── package.json
+```
+
+## Data Model
+
+### `projects`
+
+The project boundary for a requirement, repository task, or ongoing engineering thread.
+
+### `conversation_entries`
+
+Raw transcript-like events written by agents or tools.
+
+### `memory_blocks`
+
+Normalized memory records that future agents should read first.
+
+Supported `block_type` values in `v1`:
+
+- `background`
+- `constraints`
+- `decisions`
+- `todo`
+- `status`
+
+## How Context Is Built
+
+`GET /projects/:id/context` and `POST /projects/:id/context/refresh` use the same deterministic rules:
+
+1. load the project
+2. load all memory blocks for that project
+3. group them by `block_type`
+4. sort each group by `importance` descending, then `updated_at` descending
+5. load recent conversation entries
+6. prefer `summary` over `content` for the continuation payload
+
+The goal is to keep `v1` simple, inspectable, and easy to debug.
+
+## API Overview
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Health check |
+| `POST` | `/projects` | Create a project |
+| `POST` | `/projects/:id/conversations` | Append a conversation entry |
+| `POST` | `/projects/:id/memory-blocks` | Upsert a structured memory block |
+| `GET` | `/projects/:id/context` | Read the assembled context bundle |
+| `POST` | `/projects/:id/context/refresh` | Rebuild and return the same context bundle explicitly |
+
+Example requests live in [docs/example-requests.md](docs/example-requests.md).
+
+## Local Development
+
+### Requirements
+
+- Node.js 22+
+- pnpm 10+
+- PostgreSQL
+- `psql` available on your shell path for the migration script
+
+### Setup
+
+```bash
+pnpm install
+export DATABASE_URL="postgres://postgres:postgres@localhost:5432/project_memory_service"
+pnpm -C apps/api db:migrate
+pnpm -C apps/api dev
+```
+
+The API starts on `http://localhost:3000`.
+
+### Useful Commands
+
+```bash
+pnpm -C apps/api dev
+pnpm -C apps/api test
+pnpm -C apps/api typecheck
+pnpm -C apps/api db:migrate
+```
+
+## Testing
+
+The current test suite covers:
+
+- health check
+- project creation
+- conversation ingestion
+- memory block upsert
+- deterministic context assembly
+- explicit refresh behavior
+
+Run everything with:
+
+```bash
+pnpm -C apps/api test
+pnpm -C apps/api typecheck
 ```
 
 ## Current Status
 
-This repository currently contains the product definition and implementation plan for `v1`. The next step is to review the spec, confirm the implementation plan, and then start building the API service.
+`v1` is implemented as a single Fastify API service with repository abstractions, deterministic context assembly, PostgreSQL migration scaffolding, and endpoint tests.
+
+The main remaining runtime step outside this repository is providing a real `DATABASE_URL` and PostgreSQL instance for end-to-end local bring-up.
+
+## Roadmap Ideas
+
+- auth and tenancy
+- semantic retrieval
+- model-assisted memory refresh
+- SDKs for agent runtimes
+- inspection UI for project memory
