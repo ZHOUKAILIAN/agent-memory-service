@@ -58,6 +58,7 @@
 │   ├── data-model.md
 │   ├── example-requests.md
 │   ├── multi-agent-sync-design-zh.md
+│   ├── recommended-memory-model-zh.md
 │   ├── task-memory-layering-research-zh.md
 │   ├── task-sync-alignment-zh.md
 │   ├── use-cases.md
@@ -115,6 +116,7 @@
 | `POST` | `/projects/:id/context/refresh` | 显式刷新并返回同一套上下文结果 |
 
 Agent 记忆模式调研见 [docs/agent-memory-patterns-research-zh.md](docs/agent-memory-patterns-research-zh.md)。
+推荐记忆模型见 [docs/recommended-memory-model-zh.md](docs/recommended-memory-model-zh.md)。
 示例请求见 [docs/example-requests.md](docs/example-requests.md)。
 接入流程说明见 [docs/agent-sync-flow-zh.md](docs/agent-sync-flow-zh.md)。
 多 Agent 接入设计见 [docs/multi-agent-sync-design-zh.md](docs/multi-agent-sync-design-zh.md)。
