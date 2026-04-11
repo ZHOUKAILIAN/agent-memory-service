@@ -1,10 +1,10 @@
-# project-memory-service
+# agent-memory-service
 
 [中文说明](README-zh.md)
 
-Shared project memory for multi-agent software work.
+Shared memory and context sync service for AI agents.
 
-`project-memory-service` is a small HTTP service that helps multiple agents continue the same engineering task across sessions, devices, and tools. It stores both raw conversation history and structured project memory, then assembles a compact context bundle so the next agent can pick up the work without replaying the whole transcript.
+`agent-memory-service` is a small HTTP service that helps AI agents continue the same engineering task across sessions, devices, and runtimes. It stores both raw conversation history and structured project memory, then assembles a compact context bundle so the next agent can pick up the work without replaying the whole transcript.
 
 ## Why This Exists
 

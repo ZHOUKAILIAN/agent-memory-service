@@ -1,10 +1,10 @@
-# project-memory-service
+# agent-memory-service
 
 [English README](README.md)
 
-面向多智能体软件协作的共享项目记忆服务。
+面向 AI Agent 的共享记忆与上下文同步服务。
 
-`project-memory-service` 是一个轻量 HTTP 服务，用来帮助多个智能体在不同会话、设备和工具之间继续同一项工程任务。它会同时保存原始对话历史和结构化项目记忆，并组装出一个紧凑的上下文包，让下一个智能体不必重放整段对话也能继续工作。
+`agent-memory-service` 是一个轻量 HTTP 服务，用来帮助 AI Agent 在不同会话、设备和运行时之间继续同一项工程任务。它会同时保存原始对话历史和结构化项目记忆，并组装出一个紧凑的上下文包，让下一个 agent 不必重放整段对话也能继续工作。
 
 ## 这个项目解决什么问题
 

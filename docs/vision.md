@@ -4,7 +4,7 @@
 
 Agent work is increasingly split across local IDEs, desktop apps, browsers, mobile clients, and vendor-specific runtimes. The useful memory created in one place rarely becomes reusable in another. Users end up re-explaining the same project background, constraints, and recent decisions every time they switch tools.
 
-`project-memory-service` exists to make project memory portable across agents.
+`agent-memory-service` exists to make project memory portable across agents.
 
 ## Product Thesis
 

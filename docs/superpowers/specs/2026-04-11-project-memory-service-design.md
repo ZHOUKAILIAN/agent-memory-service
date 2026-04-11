@@ -2,7 +2,7 @@
 
 ## Summary
 
-`project-memory-service` is a shared memory layer for multi-agent engineering work. It stores both raw conversation history and structured project memory, then returns an assembled context bundle so another agent can continue the same project without requiring the user to restate the background.
+`agent-memory-service` is a shared memory layer for multi-agent engineering work. It stores both raw conversation history and structured project memory, then returns an assembled context bundle so another agent can continue the same project without requiring the user to restate the background.
 
 ## Problem
 

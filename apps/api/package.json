@@ -1,5 +1,5 @@
 {
-  "name": "@project-memory-service/api",
+  "name": "@agent-memory-service/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
