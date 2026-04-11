@@ -52,6 +52,7 @@
 │       ├── src
 │       └── test
 ├── docs
+│   ├── agent-memory-patterns-research-zh.md
 │   ├── agent-sync-flow-zh.md
 │   ├── api-draft.md
 │   ├── data-model.md
@@ -113,6 +114,7 @@
 | `GET` | `/projects/:id/context` | 读取组装后的上下文包 |
 | `POST` | `/projects/:id/context/refresh` | 显式刷新并返回同一套上下文结果 |
 
+Agent 记忆模式调研见 [docs/agent-memory-patterns-research-zh.md](docs/agent-memory-patterns-research-zh.md)。
 示例请求见 [docs/example-requests.md](docs/example-requests.md)。
 接入流程说明见 [docs/agent-sync-flow-zh.md](docs/agent-sync-flow-zh.md)。
 多 Agent 接入设计见 [docs/multi-agent-sync-design-zh.md](docs/multi-agent-sync-design-zh.md)。

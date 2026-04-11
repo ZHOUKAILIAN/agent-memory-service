@@ -52,6 +52,7 @@ This service gives all agents a shared, project-scoped memory backend.
 │       ├── src
 │       └── test
 ├── docs
+│   ├── agent-memory-patterns-research-zh.md
 │   ├── agent-sync-flow-zh.md
 │   ├── api-draft.md
 │   ├── data-model.md
@@ -113,6 +114,7 @@ The goal is to keep `v1` simple, inspectable, and easy to debug.
 | `GET` | `/projects/:id/context` | Read the assembled context bundle |
 | `POST` | `/projects/:id/context/refresh` | Rebuild and return the same context bundle explicitly |
 
+Chinese agent memory pattern research lives in [docs/agent-memory-patterns-research-zh.md](docs/agent-memory-patterns-research-zh.md).
 Example requests live in [docs/example-requests.md](docs/example-requests.md).
 Chinese integration flow notes live in [docs/agent-sync-flow-zh.md](docs/agent-sync-flow-zh.md).
 Chinese multi-agent integration design lives in [docs/multi-agent-sync-design-zh.md](docs/multi-agent-sync-design-zh.md).
