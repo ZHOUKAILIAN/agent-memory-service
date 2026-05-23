@@ -1,5 +1,6 @@
 import { getBaseUrl } from "./config.ts";
 import { checkpointCommand } from "./commands/checkpoint.ts";
+import { agentSessionsCommand } from "./commands/agent-sessions.ts";
 import { contextCommand } from "./commands/context.ts";
 import { flushOutboxCommand } from "./commands/flush-outbox.ts";
 import { resolveCommand } from "./commands/resolve.ts";
@@ -13,7 +14,7 @@ export type CliIo = {
   writeStderr?: (chunk: string) => void;
 };
 
-const helpText = "Commands: resolve, context, checkpoint, flush-outbox\nGlobal flags: --workspace <path>\n";
+const helpText = "Commands: resolve, context, checkpoint, flush-outbox, agent-sessions\nGlobal flags: --workspace <path>\n";
 
 export async function runCli(argv: string[], io: CliIo = {}) {
   const writeStdout = io.writeStdout ?? ((chunk: string) => process.stdout.write(chunk));
@@ -63,6 +64,16 @@ export async function runCli(argv: string[], io: CliIo = {}) {
   if (command === "flush-outbox") {
     return await flushOutboxCommand(flags, {
       apiClient,
+      cwd,
+      writeStdout,
+      writeStderr
+    });
+  }
+
+  if (command === "agent-sessions") {
+    const subcommand = argv[1] ?? "list";
+    flags.set("_subcommand", [subcommand]);
+    return await agentSessionsCommand(flags, {
       cwd,
       writeStdout,
       writeStderr

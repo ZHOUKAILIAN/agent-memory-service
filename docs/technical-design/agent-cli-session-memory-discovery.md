@@ -46,7 +46,7 @@
 本议题在当前阶段遵循以下硬性约束：
 
 1. 不新增服务端 API。
-2. 不做数据库 migration。
+2. 不做服务端数据库 migration；允许在 `apps/cli` 本地 `.agent-memory/bridge.sqlite` 中做受控 bridge 表扩展。
 3. 不真实读取 `~/.codex`、`~/.gemini`、Claude 本地目录中的私人会话正文。
 4. 不上传 transcript、密钥、令牌、环境变量等敏感内容。
 5. 不把 provider 名称、base URL、账户信息或本地目录路径定义为主身份主键。
@@ -164,7 +164,19 @@ AMS 的连续性恢复必须建立在稳定身份层上，而不是建立在某�
 
 ## 9. 验证与后续演进
 
-### 9.1 本次文档交付验证点
+### 9.1 AMS-002 实现对齐与受控例外
+
+AMS-002 已在 `apps/cli` 落地一个受控的本地 bridge 扩展，用于记录与列出 Agent CLI session locator metadata。该实现与本文设计保持一致，且只在以下边界内覆盖原“非目标”表述：
+
+1. 新增的是本地 CLI 命令 `agent-memory agent-sessions`，不是服务端 API，也不改变 `project -> task` 的正式语义。
+2. 新增的是 `bridge.sqlite` 本地表 `agent_session_locators`，不是 `apps/api` migration，也不引入服务端 schema 变更。
+3. 新记录只附着在既有 `workspace_bindings` 事实上；写入前必须先存在工作区 binding，locator metadata 不能反向生成新的项目/任务身份。
+4. `provider` 与 `base URL` 仍然只是可变的辅助观测字段，不是主键；同一 workspace/task 下允许记录多个 locator 来表示外部来源变化。
+5. 实现只保存脱敏后的 locator metadata，不读取、不导入、也不上传真实第三方会话原文；`base_url` 仅保留非敏感 label/hash，本地元数据中也不得落盘 token、cookie、Authorization 或环境变量原文。
+
+因此，AMS-002 不是推翻本文“无新增 API / 无服务端 migration / 稳定身份来自 workspace/task”的上层真相，而是在本地 CLI bridge 范围内增加一个受控附着层，用来帮助用户在 Codex provider/base URL 改变后，仍把多个外部 locator 识别为同一 workspace/task 连续体。
+
+### 9.2 本次文档交付验证点
 
 验证至少应覆盖以下项目：
 
@@ -175,7 +187,7 @@ AMS 的连续性恢复必须建立在稳定身份层上，而不是建立在某�
 5. 文档明确安全边界：无新增 API、无 migration、不读取真实私有原文、不上传敏感内容。
 6. `README.md` 与 `README-zh.md` 提供到本文档的可见入口。
 
-### 9.2 后续演进方向
+### 9.3 后续演进方向
 
 后续如需真正实现来源适配器或发现器，应继续遵守本文档定义：
 
@@ -191,9 +203,11 @@ AMS 的连续性恢复必须建立在稳定身份层上，而不是建立在某�
 
 - 真实的多 CLI 本地扫描器实现
 - 新的 server endpoint
-- 新的 CLI 命令
-- 数据库 schema 调整或 migration
+- 新的服务端 CLI/API 协议
+- `apps/api` 数据库 migration 或服务端 schema 调整
 - 第三方完整历史对话导入
+
+说明：AMS-002 已受控实现本地 `agent-sessions` CLI 命令与 `bridge.sqlite` 内部表 `agent_session_locators`。这属于本文第 `9.1` 节定义的本地 bridge 扩展例外，不应解读为服务端能力扩张或身份规则变更。
 
 ### 10.2 开放问题
 
