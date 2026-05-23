@@ -51,6 +51,8 @@ pnpm -C apps/cli start agent-sessions record \
   --provider provider-b \
   --base-url 'https://api.second.example/v1?token=secret-b'
 
+pnpm -C apps/cli start doctor --workspace "$PWD"
+pnpm -C apps/cli start doctor --workspace "$PWD" --json
 pnpm -C apps/cli start agent-sessions list --workspace "$PWD"
 pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 ```
@@ -74,11 +76,14 @@ pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 
 ## CLI 命令
 
+- `doctor`：诊断当前 workspace 的环境、绑定、locator 摘要、安全边界与下一步建议
 - `resolve`：把当前工作区绑定到 project/task
 - `context`：读取当前上下文包
 - `checkpoint`：写入任务进度、决策与下一步
 - `flush-outbox`：重试补传延迟事件
 - `agent-sessions record|list`：记录并查看 agent session locator
+
+`doctor` 是当前 M1 onboarding 入口，用来快速判断当前 workspace 是否已经跑通连续性链路；需要脚本消费时可加 `--json`。
 
 现在 `agent-sessions` 默认输出更偏产品可读结果；需要机器可解析结构时，请使用 `--json`。
 

@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 import {
   type AgentCli,
   type AgentSessionLocatorRecord,
@@ -7,6 +5,7 @@ import {
   listAgentSessionLocators,
   saveAgentSessionLocator
 } from "../storage/sqlite.ts";
+import { sanitizeBaseUrl } from "../base-url.ts";
 
 const allowedAgentCli = new Set<AgentCli>(["codex", "gemini", "claude", "other"]);
 
@@ -129,27 +128,6 @@ function parseRecordInput(args: Map<string, string[]>): AgentSessionRecordInput 
     baseUrl: args.get("base-url")?.[0],
     taskKey: args.get("task-key")?.[0]
   };
-}
-
-function sanitizeBaseUrl(value?: string) {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    const parsedUrl = new URL(value);
-    const normalized = parsedUrl.origin;
-
-    return {
-      label: normalized,
-      hash: createHash("sha256").update(normalized).digest("hex")
-    };
-  } catch {
-    return {
-      label: null,
-      hash: createHash("sha256").update(value).digest("hex")
-    };
-  }
 }
 
 function formatRecordSummary(record: AgentSessionLocatorRecord) {

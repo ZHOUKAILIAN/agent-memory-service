@@ -14,3 +14,7 @@ export function ensureBridgeDirectory(cwd: string) {
 export function getBridgeDatabasePath(cwd: string) {
   return path.join(ensureBridgeDirectory(cwd), "bridge.sqlite");
 }
+
+export function getBridgeDatabaseFilePath(cwd: string) {
+  return path.join(getBridgeDirectory(cwd), "bridge.sqlite");
+}
