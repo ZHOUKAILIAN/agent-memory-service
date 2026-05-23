@@ -80,6 +80,7 @@ Full walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-
 
 ## Deep dive
 
+- Product roadmap and acceptance: [docs/product/roadmap.md](docs/product/roadmap.md)
 - Technical design: [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md)
 - Demo script: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
 
