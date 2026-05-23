@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import {
   type AgentCli,
+  type AgentSessionLocatorRecord,
   getWorkspaceBinding,
   listAgentSessionLocators,
   saveAgentSessionLocator
@@ -33,7 +34,7 @@ export async function agentSessionsCommand(
   }
 
   if (action === "list") {
-    return listAgentSessions(input);
+    return listAgentSessions(args, input);
   }
 
   input.writeStderr("Usage: agent-memory agent-sessions <record|list> [flags]\n");
@@ -77,16 +78,30 @@ async function recordAgentSessionLocator(
     metadata: {}
   });
 
-  input.writeStdout(`${JSON.stringify(record, null, 2)}\n`);
+  if (args.has("json")) {
+    input.writeStdout(`${JSON.stringify(record, null, 2)}\n`);
+    return 0;
+  }
+
+  input.writeStdout(formatRecordSummary(record));
   return 0;
 }
 
-async function listAgentSessions(input: {
-  cwd: string;
-  writeStdout: (chunk: string) => void;
-}) {
+async function listAgentSessions(
+  args: Map<string, string[]>,
+  input: {
+    cwd: string;
+    writeStdout: (chunk: string) => void;
+  }
+) {
   const records = listAgentSessionLocators(input.cwd);
-  input.writeStdout(`${JSON.stringify(records, null, 2)}\n`);
+
+  if (args.has("json")) {
+    input.writeStdout(`${JSON.stringify(records, null, 2)}\n`);
+    return 0;
+  }
+
+  input.writeStdout(formatListSummary(input.cwd, records));
   return 0;
 }
 
@@ -135,4 +150,53 @@ function sanitizeBaseUrl(value?: string) {
       hash: createHash("sha256").update(value).digest("hex")
     };
   }
+}
+
+function formatRecordSummary(record: AgentSessionLocatorRecord) {
+  const lines = [
+    `Recorded ${record.agentCli} locator for workspace ${record.workspacePath}.`,
+    `projectId: ${record.projectId}`,
+    `taskId: ${record.taskId ?? "-"}`,
+    `agentCli: ${record.agentCli}`,
+    `locator: ${record.locator}`
+  ];
+
+  if (record.providerLabel) {
+    lines.push(`provider: ${record.providerLabel}`);
+  }
+
+  if (record.baseUrlLabel) {
+    lines.push(`baseUrl: ${record.baseUrlLabel}`);
+  }
+
+  if (record.taskKey) {
+    lines.push(`taskKey: ${record.taskKey}`);
+  }
+
+  lines.push("metadata: metadata only; no transcript or ~/.codex content stored.");
+  return `${lines.join("\n")}\n`;
+}
+
+function formatListSummary(workspacePath: string, records: AgentSessionLocatorRecord[]) {
+  if (records.length === 0) {
+    return [
+      `Workspace: ${workspacePath}`,
+      "Locator count: 0",
+      "No recorded agent session locators."
+    ].join("\n") + "\n";
+  }
+
+  const lines = [
+    `Workspace: ${workspacePath}`,
+    `Locator count: ${records.length}`,
+    "metadata: metadata only; no transcript or ~/.codex content stored."
+  ];
+
+  for (const record of records) {
+    lines.push(
+      `- ${record.agentCli} ${record.locator} | projectId=${record.projectId} | taskId=${record.taskId ?? "-"} | provider=${record.providerLabel ?? "-"} | baseUrl=${record.baseUrlLabel ?? "-"} | updatedAt=${record.updatedAt}`
+    );
+  }
+
+  return `${lines.join("\n")}\n`;
 }

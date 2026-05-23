@@ -2,141 +2,110 @@
 
 [中文说明](README-zh.md)
 
-Shared memory and context sync service for AI agents.
+`agent-memory-service` is a CLI-first memory bridge for agents that lose continuity when the runtime changes.
 
-`agent-memory-service` is a small HTTP service that helps AI agents continue the same engineering task across sessions, devices, and runtimes. It stores both raw conversation history and structured project memory, then assembles a compact context bundle so the next agent can pick up the work without replaying the whole transcript.
+It is built for a specific pain: you resolve a workspace/task once, then switch Codex provider or base URL, and the next agent run looks like a different session. This project keeps those locator changes attached to the same `workspace` / `projectId` / `taskId` without reading private transcripts.
 
-## Why This Exists
+## What problem it solves
 
-Agent work is often fragmented:
+- Agent CLI sessions break continuity across restarts, machines, or tools.
+- Codex `provider` / `base_url` switches can make the same engineering thread look unrelated.
+- Teams need a safe bridge that tracks ownership metadata instead of copying raw conversation history.
 
-- one coding session has important decisions that never reach the next runtime
-- mobile or follow-up agents need the user to restate background and status
-- useful context is trapped inside long transcripts instead of reusable memory
+## Why metadata instead of transcripts
 
-This service gives all agents a shared, project-scoped memory backend.
+The product value here is not “store more chat”. It is “bind different agent entry points back to one workspace/task”.
 
-## What V1 Ships
+For AMS-003, the continuity flow records only locator metadata:
 
-- Project creation with stable `project_id`
-- Conversation ingestion for raw messages and tool events
-- Structured memory block upsert for background, constraints, decisions, todo, and status
-- Deterministic context bundle assembly
-- Explicit context refresh endpoint
-- PostgreSQL migration scaffold
-- Automated API tests
+- workspace binding facts
+- project/task binding facts
+- agent CLI name and locator
+- provider label
+- sanitized base URL label/hash
 
-## What V1 Does Not Ship
+It does **not** read `~/.codex`, import real private session content, or upload transcripts.
 
-- Authentication or permissions
-- Vector search or semantic retrieval
-- Web dashboard
-- SDKs for specific agent vendors
-- Background workers or async indexing
+## Quick demo
 
-## Tech Stack
+```bash
+export AGENT_MEMORY_BASE_URL="http://localhost:3000"
 
-- Node.js
-- TypeScript
-- Fastify
-- PostgreSQL
-- Zod
-- Vitest
+pnpm -C apps/cli start resolve --workspace "$PWD" --name demo-task
 
-## Repository Layout
+pnpm -C apps/cli start agent-sessions record \
+  --workspace "$PWD" \
+  --agent-cli codex \
+  --locator codex-provider-a \
+  --provider provider-a \
+  --base-url 'https://api.first.example/v1?token=secret-a'
+
+pnpm -C apps/cli start agent-sessions record \
+  --workspace "$PWD" \
+  --agent-cli codex \
+  --locator codex-provider-b \
+  --provider provider-b \
+  --base-url 'https://api.second.example/v1?token=secret-b'
+
+pnpm -C apps/cli start agent-sessions list --workspace "$PWD"
+pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
+```
+
+Expected result:
+
+- both Codex locators appear under the same workspace
+- both share the same `projectId` and `taskId`
+- default output is human-readable for demos
+- `--json` remains available for scripts
+- only sanitized metadata is shown; secrets in query strings are not echoed
+
+Full walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
+
+## Safety promise
+
+- metadata only
+- does not read `~/.codex`
+- does not upload transcripts
+- does not import real private session content
+
+## CLI commands
+
+- `resolve`: bind the current workspace to a project/task
+- `context`: fetch the current context bundle
+- `checkpoint`: write task progress and decisions
+- `flush-outbox`: retry deferred sync events
+- `agent-sessions record|list`: record and inspect agent session locators
+
+`agent-sessions` now defaults to product-readable terminal output. Use `--json` when you need a stable machine-readable contract.
+
+## Deep dive
+
+- Technical design: [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md)
+- Demo script: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
+
+## Repository layout
 
 ```text
 .
 ├── apps
 │   ├── cli
-│   │   ├── src
-│   │   └── test
 │   └── api
-│       ├── src
-│       └── test
 ├── docs
-│   ├── agent-memory-patterns-research-zh.md
-│   ├── agent-sync-flow-zh.md
-│   ├── api-draft.md
-│   ├── data-model.md
-│   ├── example-requests.md
-│   ├── multi-agent-sync-design-zh.md
-│   ├── recommended-memory-model-zh.md
-│   ├── task-memory-layering-research-zh.md
-│   ├── task-sync-alignment-zh.md
-│   ├── use-cases.md
-│   ├── v1-scope.md
-│   └── vision.md
 ├── README.md
 ├── README-zh.md
 └── package.json
 ```
 
-## Data Model
-
-### `projects`
-
-The project boundary for a requirement, repository task, or ongoing engineering thread.
-
-### `conversation_entries`
-
-Raw transcript-like events written by agents or tools.
-
-### `memory_blocks`
-
-Normalized memory records that future agents should read first.
-
-Supported `block_type` values in `v1`:
-
-- `background`
-- `constraints`
-- `decisions`
-- `todo`
-- `status`
-
-## How Context Is Built
-
-`GET /projects/:id/context` and `POST /projects/:id/context/refresh` use the same deterministic rules:
-
-1. load the project
-2. load all memory blocks for that project
-3. group them by `block_type`
-4. sort each group by `importance` descending, then `updated_at` descending
-5. load recent conversation entries
-6. prefer `summary` over `content` for the continuation payload
-
-The goal is to keep `v1` simple, inspectable, and easy to debug.
-
-## API Overview
-
-| Method | Route | Purpose |
-| --- | --- | --- |
-| `GET` | `/health` | Health check |
-| `POST` | `/projects` | Create a project |
-| `POST` | `/projects/:id/conversations` | Append a conversation entry |
-| `POST` | `/projects/:id/memory-blocks` | Upsert a structured memory block |
-| `GET` | `/projects/:id/context` | Read the assembled context bundle |
-| `POST` | `/projects/:id/context/refresh` | Rebuild and return the same context bundle explicitly |
-
-Chinese agent memory pattern research lives in [docs/agent-memory-patterns-research-zh.md](docs/agent-memory-patterns-research-zh.md).
-Chinese recommended memory model lives in [docs/recommended-memory-model-zh.md](docs/recommended-memory-model-zh.md).
-Example requests live in [docs/example-requests.md](docs/example-requests.md).
-Chinese integration flow notes live in [docs/agent-sync-flow-zh.md](docs/agent-sync-flow-zh.md).
-Chinese multi-agent integration design lives in [docs/multi-agent-sync-design-zh.md](docs/multi-agent-sync-design-zh.md).
-Chinese task-sync alignment notes live in [docs/task-sync-alignment-zh.md](docs/task-sync-alignment-zh.md).
-Chinese task memory layering research lives in [docs/task-memory-layering-research-zh.md](docs/task-memory-layering-research-zh.md).
-Cross-Agent CLI session and memory discovery design lives in [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md).
-
-## Local Development
+## Local development
 
 ### Requirements
 
 - Node.js 22+
 - pnpm 10+
 - PostgreSQL
-- `psql` available on your shell path for the migration script
+- `psql` available in your shell for migrations
 
-### Setup
+### Start the API
 
 ```bash
 pnpm install
@@ -145,92 +114,11 @@ pnpm -C apps/api db:migrate
 pnpm -C apps/api dev
 ```
 
-The API starts on `http://localhost:3000`.
-
-### Useful Commands
+### Useful commands
 
 ```bash
 pnpm -C apps/cli test
-pnpm -C apps/api dev
-pnpm -C apps/api test
-pnpm -C apps/api typecheck
-pnpm -C apps/api db:migrate
-```
-
-## Minimal CLI Flow
-
-You can now validate the sync loop with the CLI-first path.
-
-Set the service base URL:
-
-```bash
-export AGENT_MEMORY_BASE_URL="http://localhost:3000"
-```
-
-Bind the current workspace the first time:
-
-```bash
-pnpm -C apps/cli start resolve --workspace "$PWD" --name demo-task
-```
-
-This resolves or creates:
-
-- one `project` for the current workspace
-- one `task` inside that project for the current requirement
-
-The local binding and retry outbox are stored in `.agent-memory/bridge.sqlite` under the workspace root.
-
-Read the current context:
-
-```bash
-pnpm -C apps/cli start context --workspace "$PWD"
-```
-
-Write a checkpoint:
-
-```bash
-pnpm -C apps/cli start checkpoint --workspace "$PWD" \
-  --summary "Finished callback URL validation" \
-  --status "in_progress" \
-  --decision "Only trust server-side callback validation" \
-  --next-step "Add redirect automation tests"
-```
-
-Retry queued events later if the network was down:
-
-```bash
-pnpm -C apps/cli start flush-outbox --workspace "$PWD"
-```
-
-## Testing
-
-The current test suite covers:
-
-- health check
-- project creation
-- conversation ingestion
-- memory block upsert
-- deterministic context assembly
-- explicit refresh behavior
-
-Run everything with:
-
-```bash
-pnpm -C apps/cli test
+pnpm -C apps/cli test:e2e
 pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
-
-## Current Status
-
-`v1` is implemented as a single Fastify API service plus a CLI-first local bridge. The runtime model is now `project -> task`, with PostgreSQL as the shared source of truth and local SQLite for workspace binding and offline retry.
-
-The main remaining runtime step outside this repository is providing a real `DATABASE_URL` and PostgreSQL instance for end-to-end local bring-up.
-
-## Roadmap Ideas
-
-- auth and tenancy
-- semantic retrieval
-- model-assisted memory refresh
-- SDKs for agent runtimes
-- inspection UI for project memory
