@@ -14,7 +14,7 @@ export type CliIo = {
   writeStderr?: (chunk: string) => void;
 };
 
-const helpText = "Commands: resolve, context, checkpoint, flush-outbox, agent-sessions\nGlobal flags: --workspace <path>\n";
+const helpText = "Commands: resolve, context, checkpoint, flush-outbox, agent-sessions\nGlobal flags: --workspace <path>\nagent-sessions flags: --json for machine-readable output\n";
 
 export async function runCli(argv: string[], io: CliIo = {}) {
   const writeStdout = io.writeStdout ?? ((chunk: string) => process.stdout.write(chunk));

@@ -42,7 +42,7 @@ function openDatabase(cwd: string) {
   return new DatabaseSync(path.join(cwd, ".agent-memory", "bridge.sqlite"));
 }
 
-test("agent-sessions record stores locator metadata and returns JSON", async () => {
+test("agent-sessions record defaults to human-readable summary and stores locator metadata", async () => {
   const tempDir = await setupBoundWorkspace();
   const writes: string[] = [];
 
@@ -62,7 +62,34 @@ test("agent-sessions record stores locator metadata and returns JSON", async () 
   });
 
   assert.equal(exitCode, 0);
-  const output = JSON.parse(writes.join("")) as {
+  const summary = writes.join("");
+  assert.match(summary, /Recorded codex locator for workspace/);
+  assert.match(summary, /projectId: prj_123/);
+  assert.match(summary, /taskId: tsk_123/);
+  assert.match(summary, /provider: openai-compatible/);
+  assert.match(summary, /baseUrl: https:\/\/api\.example\.com/);
+  assert.match(summary, /metadata only; no transcript or ~\/\.codex content stored\./);
+  assert.doesNotMatch(summary, /token=secret/);
+
+  const jsonWrites: string[] = [];
+  const jsonExitCode = await runCli([
+    "agent-sessions",
+    "record",
+    "--json",
+    "--agent-cli", "codex",
+    "--locator", "session-1-json",
+    "--session-path", "/tmp/codex/session-1.json",
+    "--provider", "openai-compatible",
+    "--base-url", "https://api.example.com/v1?token=secret",
+    "--task-key", "AMS-002"
+  ], {
+    cwd: tempDir,
+    writeStdout: (chunk) => jsonWrites.push(chunk),
+    writeStderr: (chunk) => jsonWrites.push(chunk)
+  });
+
+  assert.equal(jsonExitCode, 0);
+  const output = JSON.parse(jsonWrites.join("")) as {
     agentCli: string;
     locator: string;
     baseUrlLabel: string;
@@ -72,7 +99,7 @@ test("agent-sessions record stores locator metadata and returns JSON", async () 
   };
 
   assert.equal(output.agentCli, "codex");
-  assert.equal(output.locator, "session-1");
+  assert.equal(output.locator, "session-1-json");
   assert.equal(output.baseUrlLabel, "https://api.example.com");
   assert.equal(output.taskId, "tsk_123");
   assert.equal(output.taskKey, "AMS-002");
@@ -97,7 +124,7 @@ test("agent-sessions record stores locator metadata and returns JSON", async () 
   assert.notEqual(row.base_url_hash, "https://api.example.com/v1?token=secret");
 });
 
-test("agent-sessions list returns records ordered by updated_at desc", async () => {
+test("agent-sessions list returns human-readable records ordered by updated_at desc", async () => {
   const tempDir = await setupBoundWorkspace();
 
   await runCli(["agent-sessions", "record", "--agent-cli", "codex", "--locator", "older"], {
@@ -121,7 +148,20 @@ test("agent-sessions list returns records ordered by updated_at desc", async () 
   });
 
   assert.equal(exitCode, 0);
-  const output = JSON.parse(writes.join("")) as Array<{ locator: string }>;
+  const summary = writes.join("");
+  assert.match(summary, /Workspace:/);
+  assert.match(summary, /Locator count: 2/);
+  assert.match(summary, /- gemini newer \| projectId=prj_123 \| taskId=tsk_123/);
+  assert.match(summary, /- codex older \| projectId=prj_123 \| taskId=tsk_123/);
+
+  const jsonWrites: string[] = [];
+  const jsonExitCode = await runCli(["agent-sessions", "list", "--json"], {
+    cwd: tempDir,
+    writeStdout: (chunk) => jsonWrites.push(chunk)
+  });
+
+  assert.equal(jsonExitCode, 0);
+  const output = JSON.parse(jsonWrites.join("")) as Array<{ locator: string }>;
   assert.deepEqual(output.map((item) => item.locator), ["newer", "older"]);
 });
 
@@ -204,6 +244,7 @@ test("agent-sessions re-record updates existing locator instead of inserting dup
   const firstWrites: string[] = [];
   await runCli([
     "agent-sessions", "record",
+    "--json",
     "--agent-cli", "codex",
     "--locator", "session-1",
     "--provider", "provider-a"
@@ -219,6 +260,7 @@ test("agent-sessions re-record updates existing locator instead of inserting dup
   const secondWrites: string[] = [];
   await runCli([
     "agent-sessions", "record",
+    "--json",
     "--agent-cli", "codex",
     "--locator", "session-1",
     "--provider", "provider-b"
