@@ -125,6 +125,7 @@ Chinese integration flow notes live in [docs/agent-sync-flow-zh.md](docs/agent-s
 Chinese multi-agent integration design lives in [docs/multi-agent-sync-design-zh.md](docs/multi-agent-sync-design-zh.md).
 Chinese task-sync alignment notes live in [docs/task-sync-alignment-zh.md](docs/task-sync-alignment-zh.md).
 Chinese task memory layering research lives in [docs/task-memory-layering-research-zh.md](docs/task-memory-layering-research-zh.md).
+Cross-Agent CLI session and memory discovery design lives in [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md).
 
 ## Local Development
 
