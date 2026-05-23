@@ -64,15 +64,16 @@
 - 在本地 workspace 建立 `project -> task` 绑定。
 - 用 `context` 恢复当前任务上下文，用 `checkpoint` 记录结构化进展。
 - 使用 `flush-outbox` 处理延迟同步事件，保持 CLI-first 工作流可继续。
+- 通过 `doctor` 在当前 workspace 视角下检查环境、binding、locator 摘要、安全边界与下一步建议。
 
 **距离完整产品还缺什么**
 
 - 对外入口仍偏技术说明，首次接触用户不一定能快速理解“连续性产品”而不是“普通记忆服务”。
-- 缺少 onboarding / doctor 体验来帮助用户快速自检环境、确认绑定状态、理解当前可用范围。
+- 已具备第一版 onboarding / doctor 诊断能力，但仍缺少自动修复与更低摩擦的一键演示。
 
 **差距归类**
 
-- 产品入口与 onboarding 差距。
+- 产品入口已补上第一版，剩余差距集中在自动修复与更完整 onboarding 叙事。
 
 **Roadmap 归属**
 
@@ -127,6 +128,12 @@
 ## 5. Roadmap 里程碑
 
 ### M1：Onboarding / Doctor
+
+**当前进展**
+
+- 已实现 `agent-memory doctor [--workspace <path>] [--json]`。
+- 默认输出可读诊断摘要，`--json` 提供脚本稳定快照。
+- 诊断范围覆盖环境、workspace binding、最近 locator、安全边界与下一步建议。
 
 **目标**
 

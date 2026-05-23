@@ -2,6 +2,7 @@ import { getBaseUrl } from "./config.ts";
 import { checkpointCommand } from "./commands/checkpoint.ts";
 import { agentSessionsCommand } from "./commands/agent-sessions.ts";
 import { contextCommand } from "./commands/context.ts";
+import { doctorCommand } from "./commands/doctor.ts";
 import { flushOutboxCommand } from "./commands/flush-outbox.ts";
 import { resolveCommand } from "./commands/resolve.ts";
 import { createHttpApiClient, type ApiClient } from "./http/client.ts";
@@ -14,7 +15,7 @@ export type CliIo = {
   writeStderr?: (chunk: string) => void;
 };
 
-const helpText = "Commands: resolve, context, checkpoint, flush-outbox, agent-sessions\nGlobal flags: --workspace <path>\nagent-sessions flags: --json for machine-readable output\n";
+const helpText = "Commands: resolve, doctor, context, checkpoint, flush-outbox, agent-sessions\nGlobal flags: --workspace <path>\ndoctor/agent-sessions flags: --json for machine-readable output\n";
 
 export async function runCli(argv: string[], io: CliIo = {}) {
   const writeStdout = io.writeStdout ?? ((chunk: string) => process.stdout.write(chunk));
@@ -39,6 +40,14 @@ export async function runCli(argv: string[], io: CliIo = {}) {
     return await resolveCommand(flags, {
       apiClient,
       cwd,
+      writeStdout
+    });
+  }
+
+  if (command === "doctor") {
+    return await doctorCommand(flags, {
+      cwd,
+      env: io.env,
       writeStdout
     });
   }

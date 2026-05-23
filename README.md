@@ -47,6 +47,8 @@ pnpm -C apps/cli start agent-sessions record \
   --provider provider-b \
   --base-url 'https://api.second.example/v1?token=secret-b'
 
+pnpm -C apps/cli start doctor --workspace "$PWD"
+pnpm -C apps/cli start doctor --workspace "$PWD" --json
 pnpm -C apps/cli start agent-sessions list --workspace "$PWD"
 pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 ```
@@ -70,11 +72,14 @@ Full walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-
 
 ## CLI commands
 
+- `doctor`: inspect environment, workspace binding, locator summary, safety boundary, and next steps
 - `resolve`: bind the current workspace to a project/task
 - `context`: fetch the current context bundle
 - `checkpoint`: write task progress and decisions
 - `flush-outbox`: retry deferred sync events
 - `agent-sessions record|list`: record and inspect agent session locators
+
+`doctor` is the M1 onboarding entry for checking whether continuity is already wired up in the current workspace. Use `--json` for script output.
 
 `agent-sessions` now defaults to product-readable terminal output. Use `--json` when you need a stable machine-readable contract.
 
