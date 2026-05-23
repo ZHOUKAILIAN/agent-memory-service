@@ -125,6 +125,7 @@ Agent 记忆模式调研见 [docs/agent-memory-patterns-research-zh.md](docs/age
 多 Agent 接入设计见 [docs/multi-agent-sync-design-zh.md](docs/multi-agent-sync-design-zh.md)。
 任务同步对齐文档见 [docs/task-sync-alignment-zh.md](docs/task-sync-alignment-zh.md)。
 任务记忆分层调研见 [docs/task-memory-layering-research-zh.md](docs/task-memory-layering-research-zh.md)。
+跨 Agent CLI 会话/记忆发现与项目身份稳定化设计见 [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md)。
 
 ## 本地开发
 
