@@ -114,6 +114,7 @@ Expected result:
 - FAQ: [docs/faq.md](docs/faq.md)
 - Product roadmap and acceptance: [docs/product/roadmap.md](docs/product/roadmap.md)
 - Release update template: [docs/release-update-template.md](docs/release-update-template.md)
+- Integration guide for agent tool authors: [docs/integrations/agent-tool-authors.md](docs/integrations/agent-tool-authors.md)
 - Technical design: [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md)
 - Demo script: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
 - Demo capture guide: [docs/demo/capture-guide.md](docs/demo/capture-guide.md)
