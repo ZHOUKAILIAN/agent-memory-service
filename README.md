@@ -26,7 +26,34 @@ For AMS-003, the continuity flow records only locator metadata:
 
 It does **not** read `~/.codex`, import real private session content, or upload transcripts.
 
-## Quick demo
+## One-command demo
+
+M2 now includes a first-pass one-command demo for the Codex provider/base URL continuity story.
+
+```bash
+export AGENT_MEMORY_BASE_URL="http://localhost:3000"
+pnpm -C apps/cli start demo codex-continuity
+pnpm -C apps/cli start demo codex-continuity --json
+```
+
+What it does:
+
+- creates a temporary workspace by default, or uses `--workspace <path>` if you provide one
+- runs `resolve` against the configured API
+- records two fake Codex locators with different provider/base URL metadata
+- runs `doctor` and prints a human-readable continuity result or stable JSON
+- redacts fake query tokens and stores metadata only
+
+Important M2 boundary:
+
+- this is a productized wrapper around the existing local flow
+- it does not perform real Codex locator discovery
+- it does not read `~/.codex` or upload transcripts
+- if the API is not running, the demo fails early because `resolve` still depends on `AGENT_MEMORY_BASE_URL`
+
+Full walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
+
+## Manual demo steps
 
 ```bash
 export AGENT_MEMORY_BASE_URL="http://localhost:3000"
@@ -61,8 +88,6 @@ Expected result:
 - `--json` remains available for scripts
 - only sanitized metadata is shown; secrets in query strings are not echoed
 
-Full walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
-
 ## Safety promise
 
 - metadata only
@@ -78,6 +103,7 @@ Full walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-
 - `checkpoint`: write task progress and decisions
 - `flush-outbox`: retry deferred sync events
 - `agent-sessions record|list`: record and inspect agent session locators
+- `demo codex-continuity`: run the M2 one-command continuity demo with human-readable or `--json` output
 
 `doctor` is the M1 onboarding entry for checking whether continuity is already wired up in the current workspace. Use `--json` for script output.
 

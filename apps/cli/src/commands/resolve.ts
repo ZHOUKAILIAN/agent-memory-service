@@ -1,21 +1,19 @@
 import path from "node:path";
 
 import type { ApiClient } from "../http/client.ts";
-import { getWorkspaceBinding, saveWorkspaceBinding } from "../storage/sqlite.ts";
+import { getWorkspaceBinding, saveWorkspaceBinding, type WorkspaceBinding } from "../storage/sqlite.ts";
 
-export async function resolveCommand(
+export async function resolveWorkspaceBinding(
   args: Map<string, string[]>,
   input: {
     apiClient: ApiClient;
     cwd: string;
-    writeStdout: (chunk: string) => void;
   }
-) {
+): Promise<WorkspaceBinding> {
   const existingBinding = getWorkspaceBinding(input.cwd);
 
   if (existingBinding) {
-    input.writeStdout(`${JSON.stringify(existingBinding, null, 2)}\n`);
-    return 0;
+    return existingBinding;
   }
 
   const taskTitle = args.get("name")?.[0] ?? path.basename(input.cwd);
@@ -38,12 +36,26 @@ export async function resolveCommand(
     external_ref: args.get("external-ref")?.[0]
   });
 
-  const binding = saveWorkspaceBinding(input.cwd, {
+  return saveWorkspaceBinding(input.cwd, {
     projectId: project.id,
     projectName: project.name,
     taskId: task.id,
     taskTitle: task.title,
     repoUrl: project.repo_url ?? null
+  });
+}
+
+export async function resolveCommand(
+  args: Map<string, string[]>,
+  input: {
+    apiClient: ApiClient;
+    cwd: string;
+    writeStdout: (chunk: string) => void;
+  }
+) {
+  const binding = await resolveWorkspaceBinding(args, {
+    apiClient: input.apiClient,
+    cwd: input.cwd
   });
 
   input.writeStdout(`${JSON.stringify(binding, null, 2)}\n`);

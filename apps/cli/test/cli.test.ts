@@ -12,5 +12,6 @@ test("runCli prints available commands for help", async () => {
   });
 
   assert.equal(exitCode, 0);
-  assert.match(writes.join(""), /resolve|doctor|context|checkpoint|flush-outbox|agent-sessions/);
+  assert.match(writes.join(""), /resolve|doctor|context|checkpoint|flush-outbox|agent-sessions|demo/);
+  assert.match(writes.join(""), /demo codex-continuity/);
 });

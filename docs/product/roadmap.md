@@ -151,6 +151,13 @@
 
 ### M2：一键 Demo
 
+**当前进展**
+
+- 已实现 `agent-memory demo codex-continuity` 顶层 CLI 命令。
+- 默认自动创建临时 workspace，也支持 `--workspace <path>` 与 `--json`。
+- 命令会串联 `resolve`、写入两条 fake Codex locator、执行 `doctor`，并输出可读摘要或稳定 JSON。
+- 当前实现明确只演示 M2 产品化封装，不声称真实 Codex locator discovery。
+
 **目标**
 
 - 把当前可执行但偏手工的演示流程压缩成更低摩擦的试用路径。
@@ -159,10 +166,12 @@
 
 - 提供一条能快速复现 provider/base URL 连续性的标准 demo 路径。
 - 保持演示结果可截图、可录屏、可复用于 README / release / 社媒素材。
+- 保留 `--json` 供脚本断言，同时默认输出不泄露 fake query token。
 
 **不应宣称**
 
 - 不应把 demo 包装成真实生产集成，也不应要求真实私有会话内容参与验证。
+- 不应把 M2 一键 demo 写成 M3 真实 discovery 已完成。
 
 ### M3：真实 Codex locator discovery
 
