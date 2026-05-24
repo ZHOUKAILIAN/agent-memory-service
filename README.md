@@ -180,6 +180,22 @@ pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
 
+### Use the `agent-memory` binary locally
+
+The CLI package exposes an `agent-memory` binary for the commands used in the docs. From a local checkout, link it with:
+
+```bash
+pnpm install
+pnpm --filter @agent-memory-service/cli link --global
+agent-memory help
+```
+
+If you do not want a global link, keep using the workspace form:
+
+```bash
+pnpm -C apps/cli start doctor --workspace "$PWD"
+```
+
 ### Discover multi-CLI locator metadata
 
 After the demo, try the first real metadata discovery path:
