@@ -6,6 +6,27 @@
 
 It is built for a specific pain: you resolve a workspace/task once, then switch Codex provider or base URL, and the next agent run looks like a different session. This project keeps those locator changes attached to the same `workspace` / `projectId` / `taskId` without reading private transcripts.
 
+## Current status
+
+Implemented today:
+
+- workspace/task binding through `resolve`
+- context restore through `context`
+- progress capture through `checkpoint`
+- metadata-only locator recording through `agent-sessions record|list`
+- one-command Codex provider/base URL continuity demo
+- metadata-only discovery for Codex, Gemini, and Claude candidates
+- `discover all` cross-CLI candidate grouping
+- `doctor` diagnostics, JSON output, cross-CLI coverage, and Markdown smoke reports
+
+Not implemented yet:
+
+- full transcript synchronization across CLIs
+- automatic repair of every runtime issue
+- MCP / IDE integration
+- hosted dashboard
+- SSO / enterprise permissions
+
 ## What problem it solves
 
 - Agent CLI sessions break continuity across restarts, machines, or tools.
@@ -47,7 +68,7 @@ What it does:
 Important M2 boundary:
 
 - this is a productized wrapper around the existing local flow
-- it does not perform real Codex locator discovery
+- the project now supports a first metadata-only cross-CLI discovery path for Codex, Gemini, and Claude, but it still does not import transcript content
 - it does not read private CLI transcripts or upload transcripts
 - if the API is not running, the demo fails early because `resolve` still depends on `AGENT_MEMORY_BASE_URL`
 
