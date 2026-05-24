@@ -68,6 +68,11 @@ export async function doctorCommand(
     return 0;
   }
 
+  if (args.has("report")) {
+    input.writeStdout(formatDoctorReport(snapshot));
+    return 0;
+  }
+
   input.writeStdout(formatDoctorSummary(snapshot));
   return 0;
 }
@@ -188,6 +193,46 @@ function mapLocatorSummary(record: AgentSessionLocatorRecord) {
     baseUrlLabel: record.baseUrlLabel ?? null,
     updatedAt: record.updatedAt
   };
+}
+
+
+export function formatDoctorReport(snapshot: DoctorSnapshot) {
+  const bindingStatus = snapshot.binding.exists ? "present" : "missing";
+  const locatorRows = snapshot.locators.recent.length === 0
+    ? "| - | - | - | - |\n"
+    : snapshot.locators.recent.map((locator) => (
+      `| ${locator.agentCli} | ${escapeMarkdown(locator.locator)} | ${escapeMarkdown(locator.providerLabel ?? "-")} | ${escapeMarkdown(locator.baseUrlLabel ?? "-")} |`
+    )).join("\n") + "\n";
+  const nextSteps = snapshot.nextSteps.map((step) => `- ${step}`).join("\n");
+
+  return `# agent-memory doctor report\n\n` +
+    `## Summary\n\n` +
+    `- Workspace: \`${escapeMarkdown(snapshot.workspace)}\`\n` +
+    `- Bridge DB: ${snapshot.environment.bridgeExists ? "present" : "missing"}\n` +
+    `- Workspace binding: ${bindingStatus}\n` +
+    `- Project: ${snapshot.binding.projectId ?? "-"} (${snapshot.binding.projectName ?? "-"})\n` +
+    `- Task: ${snapshot.binding.taskId ?? "-"} (${snapshot.binding.taskTitle ?? "-"})\n` +
+    `- Locator count: ${snapshot.locators.count}\n` +
+    `- Coverage: ${snapshot.coverage.status} — ${snapshot.coverage.summary}\n\n` +
+    `## Coverage by CLI\n\n` +
+    `| CLI | Locators |\n| --- | ---: |\n` +
+    `| codex | ${snapshot.coverage.countsByCli.codex} |\n` +
+    `| gemini | ${snapshot.coverage.countsByCli.gemini} |\n` +
+    `| claude | ${snapshot.coverage.countsByCli.claude} |\n` +
+    `| other | ${snapshot.coverage.countsByCli.other} |\n\n` +
+    `## Recent locators\n\n` +
+    `| CLI | Locator | Provider | Base URL |\n| --- | --- | --- | --- |\n` +
+    locatorRows +
+    `\n## Safety\n\n` +
+    `- Metadata only\n` +
+    `- Does not read private CLI transcripts\n` +
+    `- Does not upload transcripts\n` +
+    `- Base URL labels are sanitized to origins\n\n` +
+    `## Next steps\n\n${nextSteps}\n`;
+}
+
+function escapeMarkdown(value: string) {
+  return value.replace(/[|`]/g, "\\$&");
 }
 
 function formatDoctorSummary(snapshot: DoctorSnapshot) {

@@ -19,7 +19,8 @@ export type CliIo = {
 
 const helpText = `Commands: resolve, doctor, context, checkpoint, flush-outbox, agent-sessions, demo, discover
 Global flags: --workspace <path>
-doctor/agent-sessions/demo/discover flags: --json for machine-readable output
+doctor flags: --json for machine-readable output, --report for Markdown smoke report
+agent-sessions/demo/discover flags: --json for machine-readable output
 Demo: demo codex-continuity [--workspace <path>] [--json]
 Discovery: discover <codex|gemini|claude|all> [--home <path>] [--codex-home <path>] [--gemini-home <path>] [--claude-home <path>] [--json] [--record <candidate-id>]
 `;
