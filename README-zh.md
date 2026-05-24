@@ -184,6 +184,22 @@ pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
 
+### 本地使用 `agent-memory` binary
+
+CLI package 暴露了 `agent-memory` binary，对应文档里的命令。基于本地 checkout，可以这样 link：
+
+```bash
+pnpm install
+pnpm --filter @agent-memory-service/cli link --global
+agent-memory help
+```
+
+如果不想做全局 link，也可以继续使用 workspace 形式：
+
+```bash
+pnpm -C apps/cli start doctor --workspace "$PWD"
+```
+
 ### 发现多 CLI locator metadata
 
 跑通 demo 后，可以尝试第一版真实 metadata discovery：
