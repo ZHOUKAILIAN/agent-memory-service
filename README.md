@@ -186,9 +186,12 @@ The CLI package exposes an `agent-memory` binary for the commands used in the do
 
 ```bash
 pnpm install
-pnpm --filter @agent-memory-service/cli link --global
+cd apps/cli
+pnpm link --global
 agent-memory help
 ```
+
+If your pnpm global bin directory is not configured yet, set `PNPM_HOME` / `global-bin-dir` first according to your local pnpm setup.
 
 If you do not want a global link, keep using the workspace form:
 

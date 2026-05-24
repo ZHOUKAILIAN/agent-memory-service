@@ -190,9 +190,12 @@ CLI package 暴露了 `agent-memory` binary，对应文档里的命令。基于�
 
 ```bash
 pnpm install
-pnpm --filter @agent-memory-service/cli link --global
+cd apps/cli
+pnpm link --global
 agent-memory help
 ```
+
+如果你的 pnpm global bin 目录还没配置，需要先按本机 pnpm 设置配置 `PNPM_HOME` / `global-bin-dir`。
 
 如果不想做全局 link，也可以继续使用 workspace 形式：
 
