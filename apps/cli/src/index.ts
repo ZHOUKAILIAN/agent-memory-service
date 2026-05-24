@@ -1,3 +1,5 @@
+#!/usr/bin/env node --experimental-strip-types
+
 import { runCli } from "./cli.ts";
 
 const exitCode = await runCli(process.argv.slice(2));
