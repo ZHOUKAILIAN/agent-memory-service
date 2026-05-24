@@ -117,6 +117,7 @@ pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 
 - FAQ：[`docs/faq.md`](docs/faq.md)
 - 产品路线图与验收：[`docs/product/roadmap.md`](docs/product/roadmap.md)
+- Release/update 模板：[`docs/release-update-template.md`](docs/release-update-template.md)
 - 技术设计：[`docs/technical-design/agent-cli-session-memory-discovery.md`](docs/technical-design/agent-cli-session-memory-discovery.md)
 - 演示脚本：[`docs/demo/codex-base-url-continuity.md`](docs/demo/codex-base-url-continuity.md)
 
