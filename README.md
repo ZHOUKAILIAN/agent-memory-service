@@ -116,6 +116,7 @@ Expected result:
 - Release update template: [docs/release-update-template.md](docs/release-update-template.md)
 - Technical design: [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md)
 - Demo script: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
+- Demo capture guide: [docs/demo/capture-guide.md](docs/demo/capture-guide.md)
 
 ## Repository layout
 
