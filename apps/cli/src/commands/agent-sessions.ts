@@ -17,6 +17,7 @@ export type AgentSessionRecordInput = {
   providerLabel?: string;
   baseUrl?: string;
   taskKey?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export function buildAgentSessionLocatorInput(input: {
@@ -26,6 +27,7 @@ export function buildAgentSessionLocatorInput(input: {
   providerLabel?: string;
   baseUrl?: string;
   taskKey?: string;
+  metadata?: Record<string, unknown>;
 }): AgentSessionRecordInput {
   return {
     agentCli: input.agentCli,
@@ -33,7 +35,8 @@ export function buildAgentSessionLocatorInput(input: {
     sessionPath: input.sessionPath,
     providerLabel: input.providerLabel,
     baseUrl: input.baseUrl,
-    taskKey: input.taskKey
+    taskKey: input.taskKey,
+    metadata: input.metadata
   };
 }
 
@@ -56,7 +59,7 @@ export function saveBoundAgentSessionLocator(
     providerLabel: input.record.providerLabel ?? null,
     baseUrlHash: sanitizedBaseUrl?.hash ?? null,
     baseUrlLabel: sanitizedBaseUrl?.label ?? null,
-    metadata: {}
+    metadata: input.record.metadata ?? {}
   });
 }
 

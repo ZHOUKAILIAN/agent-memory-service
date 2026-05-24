@@ -158,3 +158,14 @@ pnpm -C apps/cli test:e2e
 pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
+
+### 发现 Codex locator metadata
+
+跑通 demo 后，可以尝试第一版真实 metadata discovery：
+
+```bash
+agent-memory discover codex --codex-home ~/.codex
+agent-memory discover codex --codex-home ~/.codex --record codex-1
+```
+
+Discovery 只处理 metadata：候选路径、文件统计信息和安全的顶层标识。它不会导入 transcript/message/content 字段，也不会上传私人会话内容。
