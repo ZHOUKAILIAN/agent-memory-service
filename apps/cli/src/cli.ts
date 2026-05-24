@@ -3,6 +3,7 @@ import { checkpointCommand } from "./commands/checkpoint.ts";
 import { agentSessionsCommand } from "./commands/agent-sessions.ts";
 import { contextCommand } from "./commands/context.ts";
 import { demoCommand } from "./commands/demo.ts";
+import { discoverCommand } from "./commands/discover.ts";
 import { doctorCommand } from "./commands/doctor.ts";
 import { flushOutboxCommand } from "./commands/flush-outbox.ts";
 import { resolveCommand } from "./commands/resolve.ts";
@@ -16,7 +17,13 @@ export type CliIo = {
   writeStderr?: (chunk: string) => void;
 };
 
-const helpText = "Commands: resolve, doctor, context, checkpoint, flush-outbox, agent-sessions, demo\nGlobal flags: --workspace <path>\ndoctor/agent-sessions/demo flags: --json for machine-readable output\nDemo: demo codex-continuity [--workspace <path>] [--json]\n";
+const helpText = `Commands: resolve, doctor, context, checkpoint, flush-outbox, agent-sessions, demo, discover
+Global flags: --workspace <path>
+doctor/agent-sessions/demo/discover flags: --json for machine-readable output
+Demo: demo codex-continuity [--workspace <path>] [--json]
+Discovery: discover codex [--codex-home <path>] [--json] [--record <candidate-id>]
+`;
+
 
 export async function runCli(argv: string[], io: CliIo = {}) {
   const writeStdout = io.writeStdout ?? ((chunk: string) => process.stdout.write(chunk));
@@ -84,6 +91,16 @@ export async function runCli(argv: string[], io: CliIo = {}) {
     const subcommand = argv[1] ?? "list";
     flags.set("_subcommand", [subcommand]);
     return await agentSessionsCommand(flags, {
+      cwd,
+      writeStdout,
+      writeStderr
+    });
+  }
+
+  if (command === "discover") {
+    const subcommand = argv[1] ?? "help";
+    flags.set("_subcommand", [subcommand]);
+    return await discoverCommand(flags, {
       cwd,
       writeStdout,
       writeStderr

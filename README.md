@@ -154,3 +154,14 @@ pnpm -C apps/cli test:e2e
 pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
+
+### Discover Codex locator metadata
+
+After the demo, try the first real metadata discovery path:
+
+```bash
+agent-memory discover codex --codex-home ~/.codex
+agent-memory discover codex --codex-home ~/.codex --record codex-1
+```
+
+Discovery is metadata-only: it uses candidate paths, file stats, and safe top-level identifiers. It does not import transcript/message/content fields and does not upload private session content.

@@ -216,3 +216,9 @@ AMS-002 已在 `apps/cli` 落地一个受控的本地 bridge 扩展，用于记�
 1. 如果未来允许用户显式授权更深层发现，最小可接受元数据集合应如何定义。
 2. 跨仓库但任务语义延续时，Task Identity 是否需要额外跨仓库策略。
 3. 不同 CLI 若能提供标准化会话标识，是否需要统一适配器接口，但仍不能改变稳定身份主键规则。
+
+### Codex metadata discovery
+
+M3 introduces `agent-memory discover codex` as the first real Codex locator discovery path. It can scan an explicit `--codex-home` (or `~/.codex`) for candidate session locators, list metadata-only candidates, and record a selected candidate with `--record <candidate-id>` after the current workspace has been resolved.
+
+The boundary is strict: discovery may use candidate paths, file stats, and safe top-level identifiers such as session ids or sanitized base URL origins. It must not import transcript/message/content fields, must not echo token query strings, and must not upload private session content.
