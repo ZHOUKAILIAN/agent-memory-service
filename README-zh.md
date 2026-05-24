@@ -6,6 +6,27 @@
 
 它聚焦一个非常具体的场景：你先把工作区绑定到某个 task，随后切换 Codex 的 provider 或 base URL，下一次 agent 运行看起来像是“换了一个会话”。这个项目的作用，就是在**不读取私有 transcript** 的前提下，把这些不同 locator 继续归回同一个 `workspace` / `projectId` / `taskId`。
 
+## 当前状态
+
+当前已经实现：
+
+- 通过 `resolve` 建立 workspace/task 绑定
+- 通过 `context` 恢复上下文
+- 通过 `checkpoint` 记录进展
+- 通过 `agent-sessions record|list` 记录 metadata-only locator
+- Codex provider/base URL 连续性的一键 demo
+- Codex、Gemini、Claude 候选来源的 metadata-only discovery
+- `discover all` 跨 CLI 候选分组
+- `doctor` 诊断、JSON 输出、跨 CLI 覆盖度和 Markdown smoke report
+
+当前尚未实现：
+
+- 跨 CLI 完整 transcript 同步
+- 自动修复所有 runtime 问题
+- MCP / IDE 集成
+- hosted dashboard
+- SSO / enterprise permissions
+
 ## 它解决什么问题
 
 - Agent CLI 会话在重启、换机、换工具后容易断上下文。
@@ -26,7 +47,7 @@ AMS-003 这次展示的连续性流只记录这些内容：
 
 不会做这些事：
 
- - 不读取私有 CLI transcript
+- 不读取私有 CLI transcript
 - 不导入真实私有会话内容
 - 不上传 transcript
 
