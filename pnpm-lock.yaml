@@ -36,6 +36,12 @@ importers:
         specifier: ^4.0.2
         version: 4.1.4(@types/node@24.12.2)(vite@8.0.8(@types/node@24.12.2)(esbuild@0.27.7)(tsx@4.21.0))
 
+  apps/cli:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
 packages:
 
   '@emnapi/core@1.9.2':
