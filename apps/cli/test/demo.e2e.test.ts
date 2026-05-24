@@ -94,7 +94,7 @@ test("demo codex-continuity --json returns stable sanitized payload", async () =
     workspace: { path: string; temporary: boolean };
     binding: { projectId: string; taskId: string; projectName: string; taskTitle: string };
     locators: Array<{ locator: string; providerLabel: string; baseUrlLabel: string; baseUrlHash: string }>;
-    doctor: { locators: { count: number }; binding: { exists: boolean; projectId: string; taskId: string }; safety: { metadataOnly: boolean; readsPrivateCodexHome: boolean; uploadsTranscript: boolean } };
+    doctor: { locators: { count: number }; binding: { exists: boolean; projectId: string; taskId: string }; safety: { metadataOnly: boolean; readsExternalCliHome: boolean; uploadsTranscript: boolean } };
     checks: { sameProjectTask: boolean; queryTokenRedacted: boolean };
   };
 
@@ -110,7 +110,7 @@ test("demo codex-continuity --json returns stable sanitized payload", async () =
   assert.equal(payload.checks.sameProjectTask, true);
   assert.equal(payload.checks.queryTokenRedacted, true);
   assert.equal(payload.doctor.safety.metadataOnly, true);
-  assert.equal(payload.doctor.safety.readsPrivateCodexHome, false);
+  assert.equal(payload.doctor.safety.readsExternalCliHome, false);
   assert.equal(payload.doctor.safety.uploadsTranscript, false);
   assert.deepEqual(payload.locators.map((item) => item.locator).sort(), ["codex-provider-a", "codex-provider-b"]);
   assert.deepEqual(payload.locators.map((item) => item.providerLabel).sort(), ["provider-a", "provider-b"]);
