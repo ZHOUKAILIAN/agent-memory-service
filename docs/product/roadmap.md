@@ -298,6 +298,7 @@
 - 一份正式产品路线图与验收文档。
 - 一条最小连续性 demo 脚本与截图/录屏素材。
 - FAQ：为什么只存 metadata、为什么不读 transcript、与普通 chat history 的区别。
+- Release/update 模板：每次对外更新都说明新增能力、验证方式、安全边界与当前限制。
 - 面向集成作者的技术入口：discovery 设计、workspace/task 身份原则、安全边界。
 - milestone 更新模板：说明新增了什么、仍缺什么、不能夸大什么。
 
