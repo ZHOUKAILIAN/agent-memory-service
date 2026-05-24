@@ -239,3 +239,34 @@ test("discover record fails for gemini and claude when workspace is unresolved",
   assert.equal(claudeExitCode, 1);
   assert.match(claudeWrites.join(""), /Run `agent-memory resolve` first/);
 });
+
+
+test("discover all groups codex gemini and claude candidates without leaking content", async () => {
+  const codexHome = await createFakeCliHome("codex-all", "session.json", { sessionId: "codex-all-a", message: "PRIVATE CODEX", baseUrl: "https://codex.example/v1?token=secret" });
+  const geminiHome = await createFakeCliHome("gemini-all", "session.json", { sessionId: "gemini-all-a", content: "PRIVATE GEMINI" });
+  const claudeHome = await createFakeCliHome("claude-all", "session.json", { sessionId: "claude-all-a", transcript: "PRIVATE CLAUDE" });
+  const writes: string[] = [];
+
+  const exitCode = await runCli([
+    "discover", "all",
+    "--codex-home", codexHome,
+    "--gemini-home", geminiHome,
+    "--claude-home", claudeHome
+  ], {
+    cwd: await mkdtemp(path.join(tmpdir(), "agent-memory-discover-all-")),
+    writeStdout: (chunk) => writes.push(chunk),
+    writeStderr: (chunk) => writes.push(chunk)
+  });
+
+  assert.equal(exitCode, 0);
+  const output = writes.join("");
+  assert.match(output, /Cross-CLI discovery/);
+  assert.match(output, /Codex \(codex\)/);
+  assert.match(output, /Gemini \(gemini\)/);
+  assert.match(output, /Claude \(claude\)/);
+  assert.match(output, /codex-all-a/);
+  assert.match(output, /gemini-all-a/);
+  assert.match(output, /claude-all-a/);
+  assert.match(output, /reason:/);
+  assert.doesNotMatch(output, /PRIVATE CODEX|PRIVATE GEMINI|PRIVATE CLAUDE|token=secret/);
+});

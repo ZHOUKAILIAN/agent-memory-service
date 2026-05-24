@@ -222,3 +222,7 @@ AMS-002 已在 `apps/cli` 落地一个受控的本地 bridge 扩展，用于记�
 M4 extends discovery to `agent-memory discover codex|gemini|claude` as the first cross-CLI metadata discovery path. It can scan an explicit `--home` or source-specific home flag for candidate session locators, list metadata-only candidates, and record a selected candidate with `--record <candidate-id>` after the current workspace has been resolved.
 
 The boundary is strict: discovery may use candidate paths, file stats, and safe top-level identifiers such as session ids or sanitized base URL origins. It must not import transcript/message/content fields, must not echo token query strings, and must not upload private session content.
+
+### M4.1 discovery UX polish
+
+`discover all` groups Codex/Gemini/Claude candidates and annotates each candidate with source/reason metadata. `doctor` summarizes locator coverage by CLI for the current workspace binding. Both remain metadata-only and must not import transcript/message/content fields.
