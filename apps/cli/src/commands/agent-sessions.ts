@@ -3,13 +3,14 @@ import {
   type AgentSessionLocatorRecord,
   getWorkspaceBinding,
   listAgentSessionLocators,
-  saveAgentSessionLocator
+  saveAgentSessionLocator,
+  type WorkspaceBinding
 } from "../storage/sqlite.ts";
 import { sanitizeBaseUrl } from "../base-url.ts";
 
 const allowedAgentCli = new Set<AgentCli>(["codex", "gemini", "claude", "other"]);
 
-type AgentSessionRecordInput = {
+export type AgentSessionRecordInput = {
   agentCli: AgentCli;
   locator: string;
   sessionPath?: string;
@@ -17,6 +18,47 @@ type AgentSessionRecordInput = {
   baseUrl?: string;
   taskKey?: string;
 };
+
+export function buildAgentSessionLocatorInput(input: {
+  agentCli: AgentCli;
+  locator: string;
+  sessionPath?: string;
+  providerLabel?: string;
+  baseUrl?: string;
+  taskKey?: string;
+}): AgentSessionRecordInput {
+  return {
+    agentCli: input.agentCli,
+    locator: input.locator,
+    sessionPath: input.sessionPath,
+    providerLabel: input.providerLabel,
+    baseUrl: input.baseUrl,
+    taskKey: input.taskKey
+  };
+}
+
+export function saveBoundAgentSessionLocator(
+  cwd: string,
+  input: {
+    binding: WorkspaceBinding;
+    record: AgentSessionRecordInput;
+  }
+) {
+  const sanitizedBaseUrl = sanitizeBaseUrl(input.record.baseUrl);
+  return saveAgentSessionLocator(cwd, {
+    workspacePath: input.binding.workspacePath,
+    projectId: input.binding.projectId,
+    taskId: input.binding.taskId ?? null,
+    taskKey: input.record.taskKey ?? null,
+    agentCli: input.record.agentCli,
+    locator: input.record.locator,
+    sessionPath: input.record.sessionPath ?? null,
+    providerLabel: input.record.providerLabel ?? null,
+    baseUrlHash: sanitizedBaseUrl?.hash ?? null,
+    baseUrlLabel: sanitizedBaseUrl?.label ?? null,
+    metadata: {}
+  });
+}
 
 export async function agentSessionsCommand(
   args: Map<string, string[]>,
@@ -62,19 +104,9 @@ async function recordAgentSessionLocator(
     return 1;
   }
 
-  const sanitizedBaseUrl = sanitizeBaseUrl(parsed.baseUrl);
-  const record = saveAgentSessionLocator(input.cwd, {
-    workspacePath: binding.workspacePath,
-    projectId: binding.projectId,
-    taskId: binding.taskId ?? null,
-    taskKey: parsed.taskKey ?? null,
-    agentCli: parsed.agentCli,
-    locator: parsed.locator,
-    sessionPath: parsed.sessionPath ?? null,
-    providerLabel: parsed.providerLabel ?? null,
-    baseUrlHash: sanitizedBaseUrl?.hash ?? null,
-    baseUrlLabel: sanitizedBaseUrl?.label ?? null,
-    metadata: {}
+  const record = saveBoundAgentSessionLocator(input.cwd, {
+    binding,
+    record: parsed
   });
 
   if (args.has("json")) {
@@ -82,7 +114,7 @@ async function recordAgentSessionLocator(
     return 0;
   }
 
-  input.writeStdout(formatRecordSummary(record));
+  input.writeStdout(formatAgentSessionLocatorSummary(record));
   return 0;
 }
 
@@ -104,7 +136,7 @@ async function listAgentSessions(
   return 0;
 }
 
-function parseRecordInput(args: Map<string, string[]>): AgentSessionRecordInput | { error: string } {
+export function parseRecordInput(args: Map<string, string[]>): AgentSessionRecordInput | { error: string } {
   const agentCliValue = args.get("agent-cli")?.[0];
   const locator = args.get("locator")?.[0] ?? args.get("session-path")?.[0];
 
@@ -130,7 +162,7 @@ function parseRecordInput(args: Map<string, string[]>): AgentSessionRecordInput 
   };
 }
 
-function formatRecordSummary(record: AgentSessionLocatorRecord) {
+export function formatAgentSessionLocatorSummary(record: AgentSessionLocatorRecord) {
   const lines = [
     `Recorded ${record.agentCli} locator for workspace ${record.workspacePath}.`,
     `projectId: ${record.projectId}`,

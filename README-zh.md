@@ -30,7 +30,34 @@ AMS-003 这次展示的连续性流只记录这些内容：
 - 不导入真实私有会话内容
 - 不上传 transcript
 
-## 最小演示
+## 一键 Demo
+
+M2 当前已经提供第一版一键 demo，用一条命令就能跑通 Codex provider/base URL 切换后的 continuity 故事。
+
+```bash
+export AGENT_MEMORY_BASE_URL="http://localhost:3000"
+pnpm -C apps/cli start demo codex-continuity
+pnpm -C apps/cli start demo codex-continuity --json
+```
+
+它会自动完成：
+
+- 默认创建临时 workspace，或使用你传入的 `--workspace <path>`
+- 调用 `resolve` 建立 `projectId` / `taskId` 绑定
+- 写入两条固定的 fake Codex locator，分别代表不同 provider/base URL
+- 运行 `doctor` 汇总结果，并输出人类可读文本或 `--json`
+- 全程只保存 metadata，且不会回显 fake query token
+
+当前 M2 边界：
+
+- 这只是把现有手工链路产品化封装成一个入口
+- 还不支持真实 Codex locator discovery
+- 不读取 `~/.codex`，不上传 transcript
+- 如果 API 没有启动，demo 会在 `resolve` 阶段直接失败，因为当前仍依赖 `AGENT_MEMORY_BASE_URL`
+
+完整演示文档见：[`docs/demo/codex-base-url-continuity.md`](docs/demo/codex-base-url-continuity.md)
+
+## 手工演示步骤
 
 ```bash
 export AGENT_MEMORY_BASE_URL="http://localhost:3000"
@@ -65,8 +92,6 @@ pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 - `--json` 继续保留给脚本
 - 只展示脱敏 metadata，不回显 query 里的敏感 token
 
-完整演示文档见：[`docs/demo/codex-base-url-continuity.md`](docs/demo/codex-base-url-continuity.md)
-
 ## 安全承诺
 
 - 只保存 metadata
@@ -82,6 +107,7 @@ pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 - `checkpoint`：写入任务进度、决策与下一步
 - `flush-outbox`：重试补传延迟事件
 - `agent-sessions record|list`：记录并查看 agent session locator
+- `demo codex-continuity`：运行 M2 一键连续性 demo，支持默认可读输出与 `--json`
 
 `doctor` 是当前 M1 onboarding 入口，用来快速判断当前 workspace 是否已经跑通连续性链路；需要脚本消费时可加 `--json`。
 
