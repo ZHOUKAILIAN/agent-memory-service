@@ -56,7 +56,7 @@ test("doctor shows resolve guidance for unbound workspace without creating bridg
   assert.match(output, /Workspace binding: missing/);
   assert.match(output, /Locator count: 0/);
   assert.match(output, /Run: pnpm -C apps\/cli start resolve/);
-  assert.match(output, /does not read ~\/\.codex/);
+  assert.match(output, /does not read private CLI transcripts/);
   assert.match(output, /Base URL: https:\/\/api\.example\.com/);
   assert.doesNotMatch(output, /token=secret/);
   assert.doesNotMatch(output, /Bridge DB: present/);
@@ -76,7 +76,7 @@ test("doctor shows resolve guidance for unbound workspace without creating bridg
     environment: { bridgeExists: boolean; baseUrlLabel: string };
     binding: { exists: boolean };
     locators: { count: number; recent: unknown[] };
-    safety: { metadataOnly: boolean; readsPrivateCodexHome: boolean; uploadsTranscript: boolean };
+    safety: { metadataOnly: boolean; readsExternalCliHome: boolean; uploadsTranscript: boolean };
     nextSteps: string[];
   };
 
@@ -86,7 +86,7 @@ test("doctor shows resolve guidance for unbound workspace without creating bridg
   assert.equal(snapshot.locators.count, 0);
   assert.deepEqual(snapshot.locators.recent, []);
   assert.equal(snapshot.safety.metadataOnly, true);
-  assert.equal(snapshot.safety.readsPrivateCodexHome, false);
+  assert.equal(snapshot.safety.readsExternalCliHome, false);
   assert.equal(snapshot.safety.uploadsTranscript, false);
   assert.match(snapshot.nextSteps[0] ?? "", /resolve/);
 });

@@ -186,7 +186,7 @@ export function formatAgentSessionLocatorSummary(record: AgentSessionLocatorReco
     lines.push(`taskKey: ${record.taskKey}`);
   }
 
-  lines.push("metadata: metadata only; no transcript or ~/.codex content stored.");
+  lines.push("metadata: metadata only; no transcript or private CLI content stored.");
   return `${lines.join("\n")}\n`;
 }
 
@@ -202,7 +202,7 @@ function formatListSummary(workspacePath: string, records: AgentSessionLocatorRe
   const lines = [
     `Workspace: ${workspacePath}`,
     `Locator count: ${records.length}`,
-    "metadata: metadata only; no transcript or ~/.codex content stored."
+    "metadata: metadata only; no transcript or private CLI content stored."
   ];
 
   for (const record of records) {
