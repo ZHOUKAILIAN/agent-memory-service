@@ -167,3 +167,7 @@ agent-memory discover codex --codex-home ~/.codex --record codex-1
 ```
 
 M4 discovery is metadata-only across Codex, Gemini, and Claude: it uses candidate paths, file stats, and safe top-level identifiers. It does not import transcript/message/content/token/query fields and does not upload private session content.
+
+### Cross-CLI discovery polish
+
+`agent-memory discover all` scans Codex, Gemini, and Claude homes in one pass and groups metadata-only candidates by CLI. `agent-memory doctor` also reports cross-CLI coverage so you can see which agents already have locators attached to the current workspace/task.

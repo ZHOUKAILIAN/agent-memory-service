@@ -5,6 +5,7 @@ import { getBaseUrl } from "../config.ts";
 import {
   getWorkspaceBinding,
   listAgentSessionLocators,
+  type AgentCli,
   type AgentSessionLocatorRecord
 } from "../storage/sqlite.ts";
 import { getBridgeDatabaseFilePath } from "../workspace.ts";
@@ -34,6 +35,14 @@ type DoctorSnapshot = {
       updatedAt: string;
     }>;
   };
+  coverage: {
+    targetAgentCli: AgentCli[];
+    countsByCli: Record<AgentCli, number>;
+    recordedAgentCli: AgentCli[];
+    missingAgentCli: AgentCli[];
+    status: "none" | "partial" | "full";
+    summary: string;
+  };
   safety: {
     metadataOnly: true;
     readsExternalCliHome: false;
@@ -41,6 +50,8 @@ type DoctorSnapshot = {
   };
   nextSteps: string[];
 };
+
+const TARGET_AGENT_CLI: AgentCli[] = ["codex", "gemini", "claude"];
 
 export async function doctorCommand(
   args: Map<string, string[]>,
@@ -67,6 +78,7 @@ export function buildDoctorSnapshot(cwd: string, env: NodeJS.ProcessEnv = proces
   const binding = bridgeExists ? getWorkspaceBinding(cwd) : null;
   const locators = bridgeExists ? listAgentSessionLocators(cwd) : [];
   const safeBaseUrl = sanitizeBaseUrl(getBaseUrl(env));
+  const coverage = buildCoverage(locators);
 
   return {
     workspace: cwd,
@@ -87,16 +99,57 @@ export function buildDoctorSnapshot(cwd: string, env: NodeJS.ProcessEnv = proces
       count: locators.length,
       recent: locators.slice(0, 5).map(mapLocatorSummary)
     },
+    coverage,
     safety: {
       metadataOnly: true,
       readsExternalCliHome: false,
       uploadsTranscript: false
     },
-    nextSteps: buildNextSteps(cwd, binding !== null, locators.length)
+    nextSteps: buildNextSteps(cwd, binding !== null, locators.length, coverage)
   };
 }
 
-function buildNextSteps(cwd: string, hasBinding: boolean, locatorCount: number) {
+function buildCoverage(locators: AgentSessionLocatorRecord[]) {
+  const countsByCli: Record<AgentCli, number> = {
+    codex: 0,
+    gemini: 0,
+    claude: 0,
+    other: 0
+  };
+
+  for (const locator of locators) {
+    countsByCli[locator.agentCli] += 1;
+  }
+
+  const recordedAgentCli = TARGET_AGENT_CLI.filter((agentCli) => countsByCli[agentCli] > 0);
+  const missingAgentCli = TARGET_AGENT_CLI.filter((agentCli) => countsByCli[agentCli] === 0);
+  const status = recordedAgentCli.length === 0
+    ? "none"
+    : missingAgentCli.length === 0
+      ? "full"
+      : "partial";
+
+  const recordedSummary = recordedAgentCli.length > 0
+    ? recordedAgentCli.map((agentCli) => `${agentCli}(${countsByCli[agentCli]})`).join(", ")
+    : "none";
+  const missingSummary = missingAgentCli.length > 0 ? missingAgentCli.join(", ") : "none";
+
+  return {
+    targetAgentCli: TARGET_AGENT_CLI,
+    countsByCli,
+    recordedAgentCli,
+    missingAgentCli,
+    status,
+    summary: `recorded ${recordedSummary}; missing ${missingSummary}`
+  } satisfies DoctorSnapshot["coverage"];
+}
+
+function buildNextSteps(
+  cwd: string,
+  hasBinding: boolean,
+  locatorCount: number,
+  coverage: DoctorSnapshot["coverage"]
+) {
   if (!hasBinding) {
     return [
       `Run: pnpm -C apps/cli start resolve --workspace "${cwd}" --name <task-name>`,
@@ -106,8 +159,17 @@ function buildNextSteps(cwd: string, hasBinding: boolean, locatorCount: number) 
 
   if (locatorCount === 0) {
     return [
-      `Run: pnpm -C apps/cli start agent-sessions record --workspace "${cwd}" --agent-cli codex --locator <locator>`,
-      "Reason: project/task identity exists, but no agent session locator metadata has been recorded yet."
+      `Run: pnpm -C apps/cli start discover all --workspace "${cwd}"`,
+      "Reason: project/task identity exists, but no agent session locator metadata has been recorded yet.",
+      `Alternative: pnpm -C apps/cli start agent-sessions record --workspace "${cwd}" --agent-cli codex --locator <locator>`
+    ];
+  }
+
+  if (coverage.status !== "full") {
+    return [
+      `Run: pnpm -C apps/cli start discover all --workspace "${cwd}"`,
+      `Optional: ${coverage.missingAgentCli.map((agentCli) => `pnpm -C apps/cli start discover ${agentCli} --workspace "${cwd}"`).join(" | ")}`,
+      "Reason: this workspace has partial cross-CLI coverage; record missing CLI locator metadata to improve continuity." 
     ];
   }
 
@@ -143,6 +205,15 @@ function formatDoctorSummary(snapshot: DoctorSnapshot) {
     `projectName: ${snapshot.binding.projectName ?? "-"}`,
     `taskId: ${snapshot.binding.taskId ?? "-"}`,
     `taskTitle: ${snapshot.binding.taskTitle ?? "-"}`,
+    "",
+    "Cross-CLI coverage",
+    `status: ${snapshot.coverage.status}`,
+    `summary: ${snapshot.coverage.summary}`,
+    `codex: ${snapshot.coverage.countsByCli.codex}`,
+    `gemini: ${snapshot.coverage.countsByCli.gemini}`,
+    `claude: ${snapshot.coverage.countsByCli.claude}`,
+    `other: ${snapshot.coverage.countsByCli.other}`,
+    `missing: ${snapshot.coverage.missingAgentCli.length > 0 ? snapshot.coverage.missingAgentCli.join(", ") : "none"}`,
     "",
     "Recent locators"
   ];

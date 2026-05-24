@@ -88,7 +88,7 @@ test("doctor reports one bound task with two codex locators and no leaked token"
   assert.match(output, /Base URL: https:\/\/doctor\.example/);
   assert.doesNotMatch(output, /token=secret/);
   assert.match(output, /does not upload transcripts/);
-  assert.match(output, /Run: pnpm -C apps\/cli start context/);
+  assert.match(output, /Run: pnpm -C apps\/cli start discover all/);
 
   const jsonWrites: string[] = [];
   const jsonExitCode = await runCli(["doctor", "--json"], {
@@ -119,4 +119,34 @@ test("doctor reports one bound task with two codex locators and no leaked token"
   ]);
   assert.equal(snapshot.environment.baseUrlLabel, "https://doctor.example");
   assert.equal(snapshot.environment.bridgeExists, true);
+});
+
+
+test("doctor reports cross CLI coverage for codex gemini and claude locators", async () => {
+  const tempDir = await mkdtemp(path.join(tmpdir(), "agent-memory-doctor-coverage-"));
+  await runCli(["resolve", "--name", "coverage-task"], {
+    cwd: tempDir,
+    apiClient: {
+      resolveProject: async () => ({ id: "prj_cov", name: "coverage-project", description: "Created by agent-memory CLI", repo_url: null, created_at: "2026-04-11T12:00:00.000Z", updated_at: "2026-04-11T12:00:00.000Z" }),
+      resolveTask: async () => ({ id: "tsk_cov", project_id: "prj_cov", title: "coverage-task", description: "Created by agent-memory CLI", source: "agent-memory-cli", external_ref: null, created_at: "2026-04-11T12:00:00.000Z", updated_at: "2026-04-11T12:00:00.000Z" })
+    },
+    writeStdout: () => {}
+  });
+
+  for (const agentCli of ["codex", "gemini", "claude"]) {
+    assert.equal(await runCli(["agent-sessions", "record", "--agent-cli", agentCli, "--locator", `${agentCli}-locator`], {
+      cwd: tempDir,
+      writeStdout: () => {},
+      writeStderr: () => {}
+    }), 0);
+  }
+
+  const writes: string[] = [];
+  const exitCode = await runCli(["doctor"], { cwd: tempDir, writeStdout: (chunk) => writes.push(chunk) });
+  assert.equal(exitCode, 0);
+  const output = writes.join("");
+  assert.match(output, /Cross-CLI coverage/);
+  assert.match(output, /codex: 1/);
+  assert.match(output, /gemini: 1/);
+  assert.match(output, /claude: 1/);
 });

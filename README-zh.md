@@ -171,3 +171,7 @@ agent-memory discover codex --codex-home ~/.codex --record codex-1
 ```
 
 M4 第一版 Discovery 现已支持 Codex、Gemini、Claude 三类 CLI，且只处理 metadata：候选路径、文件统计信息和安全的顶层标识。它不会导入 transcript/message/content/token/query 字段，也不会上传私人会话内容。
+
+### 跨 CLI discovery 打磨
+
+`agent-memory discover all` 可以一次扫描 Codex、Gemini、Claude home，并按 CLI 分组展示 metadata-only 候选。`agent-memory doctor` 也会显示当前 workspace/task 的跨 CLI 覆盖度，方便判断哪些 agent 已经记录 locator。
