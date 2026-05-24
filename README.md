@@ -9,7 +9,7 @@ It is built for a specific pain: you resolve a workspace/task once, then switch 
 ## What problem it solves
 
 - Agent CLI sessions break continuity across restarts, machines, or tools.
-- Codex `provider` / `base_url` switches can make the same engineering thread look unrelated.
+- Codex/Gemini/Claude locator discovery and Codex `provider` / `base_url` switches can make the same engineering thread look unrelated.
 - Teams need a safe bridge that tracks ownership metadata instead of copying raw conversation history.
 
 ## Why metadata instead of transcripts
@@ -24,7 +24,7 @@ For AMS-003, the continuity flow records only locator metadata:
 - provider label
 - sanitized base URL label/hash
 
-It does **not** read `~/.codex`, import real private session content, or upload transcripts.
+It does **not** read private CLI transcripts, import real private session content, or upload transcripts.
 
 ## One-command demo
 
@@ -48,7 +48,7 @@ Important M2 boundary:
 
 - this is a productized wrapper around the existing local flow
 - it does not perform real Codex locator discovery
-- it does not read `~/.codex` or upload transcripts
+- it does not read private CLI transcripts or upload transcripts
 - if the API is not running, the demo fails early because `resolve` still depends on `AGENT_MEMORY_BASE_URL`
 
 Full walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
@@ -91,7 +91,7 @@ Expected result:
 ## Safety promise
 
 - metadata only
-- does not read `~/.codex`
+- does not read private CLI transcripts
 - does not upload transcripts
 - does not import real private session content
 
@@ -155,13 +155,15 @@ pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
 
-### Discover Codex locator metadata
+### Discover multi-CLI locator metadata
 
 After the demo, try the first real metadata discovery path:
 
 ```bash
-agent-memory discover codex --codex-home ~/.codex
+agent-memory discover codex --home ~/.codex
+agent-memory discover gemini --gemini-home ~/.gemini
+agent-memory discover claude --claude-home ~/.claude
 agent-memory discover codex --codex-home ~/.codex --record codex-1
 ```
 
-Discovery is metadata-only: it uses candidate paths, file stats, and safe top-level identifiers. It does not import transcript/message/content fields and does not upload private session content.
+M4 discovery is metadata-only across Codex, Gemini, and Claude: it uses candidate paths, file stats, and safe top-level identifiers. It does not import transcript/message/content/token/query fields and does not upload private session content.

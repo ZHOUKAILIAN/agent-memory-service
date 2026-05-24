@@ -82,8 +82,8 @@ test("codex dual provider/base URL locators stay bound to one workspace task", a
   assert.match(listOutput, /baseUrl=https:\/\/api\.first\.example/);
   assert.match(listOutput, /baseUrl=https:\/\/api\.second\.example/);
   assert.doesNotMatch(listOutput, /token=secret/);
-  assert.match(firstRecordWrites.join(""), /metadata only; no transcript or ~\/\.codex content stored\./);
-  assert.match(secondRecordWrites.join(""), /metadata only; no transcript or ~\/\.codex content stored\./);
+  assert.match(firstRecordWrites.join(""), /metadata only; no transcript or private CLI content stored\./);
+  assert.match(secondRecordWrites.join(""), /metadata only; no transcript or private CLI content stored\./);
 
   const jsonWrites: string[] = [];
   const jsonExitCode = await runCli(["agent-sessions", "list", "--json"], {

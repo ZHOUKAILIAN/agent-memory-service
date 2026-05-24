@@ -68,7 +68,7 @@ test("agent-sessions record defaults to human-readable summary and stores locato
   assert.match(summary, /taskId: tsk_123/);
   assert.match(summary, /provider: openai-compatible/);
   assert.match(summary, /baseUrl: https:\/\/api\.example\.com/);
-  assert.match(summary, /metadata only; no transcript or ~\/\.codex content stored\./);
+  assert.match(summary, /metadata only; no transcript or private CLI content stored\./);
   assert.doesNotMatch(summary, /token=secret/);
 
   const jsonWrites: string[] = [];

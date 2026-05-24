@@ -36,7 +36,7 @@ type DoctorSnapshot = {
   };
   safety: {
     metadataOnly: true;
-    readsPrivateCodexHome: false;
+    readsExternalCliHome: false;
     uploadsTranscript: false;
   };
   nextSteps: string[];
@@ -89,7 +89,7 @@ export function buildDoctorSnapshot(cwd: string, env: NodeJS.ProcessEnv = proces
     },
     safety: {
       metadataOnly: true,
-      readsPrivateCodexHome: false,
+      readsExternalCliHome: false,
       uploadsTranscript: false
     },
     nextSteps: buildNextSteps(cwd, binding !== null, locators.length)
@@ -161,7 +161,7 @@ function formatDoctorSummary(snapshot: DoctorSnapshot) {
     "",
     "Safety",
     "- metadata only",
-    "- does not read ~/.codex",
+    "- does not read private CLI transcripts",
     "- does not upload transcripts",
     "",
     "Next steps"

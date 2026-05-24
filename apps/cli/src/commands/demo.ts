@@ -36,7 +36,7 @@ type DemoResult = {
     sameProjectTask: boolean;
     queryTokenRedacted: boolean;
     metadataOnly: boolean;
-    readsPrivateCodexHome: boolean;
+    readsExternalCliHome: boolean;
     uploadsTranscript: boolean;
   };
 };
@@ -149,7 +149,7 @@ export async function runCodexContinuityDemo(
       sameProjectTask: records.every((record) => record.projectId === binding.projectId && (record.taskId ?? null) === (binding.taskId ?? null)),
       queryTokenRedacted: !/token=fake-secret/i.test(outputText),
       metadataOnly: doctor.safety.metadataOnly,
-      readsPrivateCodexHome: doctor.safety.readsPrivateCodexHome,
+      readsExternalCliHome: doctor.safety.readsExternalCliHome,
       uploadsTranscript: doctor.safety.uploadsTranscript
     }
   };
@@ -229,7 +229,7 @@ function formatDemoSummary(result: DemoResult) {
     `Doctor locator count: ${result.doctor.locators.count}`,
     `Same project/task: ${result.checks.sameProjectTask ? "yes" : "no"}`,
     `Query token redacted: ${result.checks.queryTokenRedacted ? "yes" : "no"}`,
-    "Safety: metadata only; does not read ~/.codex; does not upload transcripts.",
+    "Safety: metadata only; does not read private CLI transcripts; does not upload transcripts.",
     "Result: two Codex locators now share one workspace/project/task continuity record."
   );
 

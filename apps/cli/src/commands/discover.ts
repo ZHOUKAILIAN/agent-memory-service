@@ -5,9 +5,11 @@ import os from "node:os";
 import { getWorkspaceBinding } from "../storage/sqlite.ts";
 import { saveBoundAgentSessionLocator } from "./agent-sessions.ts";
 
-type CodexCandidate = {
+type DiscoveryAgentCli = "codex" | "gemini" | "claude";
+
+type DiscoveryCandidate = {
   id: string;
-  agentCli: "codex";
+  agentCli: DiscoveryAgentCli;
   locator: string;
   sessionPath: string;
   fileName: string;
@@ -15,6 +17,46 @@ type CodexCandidate = {
   modifiedAt: string;
   metadata: Record<string, unknown>;
 };
+
+type DiscoveryAdapter = {
+  agentCli: DiscoveryAgentCli;
+  displayName: string;
+  defaultHome: string;
+  homeAlias: string;
+};
+
+const DISCOVERY_ADAPTERS: Record<DiscoveryAgentCli, DiscoveryAdapter> = {
+  codex: {
+    agentCli: "codex",
+    displayName: "Codex",
+    defaultHome: path.join(os.homedir(), ".codex"),
+    homeAlias: "codex-home"
+  },
+  gemini: {
+    agentCli: "gemini",
+    displayName: "Gemini",
+    defaultHome: path.join(os.homedir(), ".gemini"),
+    homeAlias: "gemini-home"
+  },
+  claude: {
+    agentCli: "claude",
+    displayName: "Claude",
+    defaultHome: path.join(os.homedir(), ".claude"),
+    homeAlias: "claude-home"
+  }
+};
+
+const SAFE_TOP_LEVEL_KEYS = [
+  "id",
+  "sessionId",
+  "conversationId",
+  "model",
+  "provider",
+  "providerLabel",
+  "createdAt",
+  "updatedAt",
+  "baseUrl"
+] as const;
 
 export async function discoverCommand(
   args: Map<string, string[]>,
@@ -24,37 +66,38 @@ export async function discoverCommand(
     writeStderr: (chunk: string) => void;
   }
 ) {
-  const target = args.get("_subcommand")?.[0] ?? "help";
-  if (target !== "codex") {
-    input.writeStderr("Usage: agent-memory discover codex [--codex-home <path>] [--json] [--record <candidate-id>]\n");
+  const target = args.get("_subcommand")?.[0];
+  if (!target || !isDiscoveryAgentCli(target)) {
+    input.writeStderr("Usage: agent-memory discover <codex|gemini|claude> [--home <path>] [--codex-home <path>] [--gemini-home <path>] [--claude-home <path>] [--json] [--record <candidate-id>]\n");
     return 1;
   }
 
-  const codexHome = args.get("codex-home")?.[0] ?? path.join(os.homedir(), ".codex");
-  const candidates = discoverCodexCandidates(codexHome);
+  const adapter = DISCOVERY_ADAPTERS[target];
+  const home = resolveDiscoveryHome(args, adapter);
+  const candidates = discoverCandidates(adapter, home);
   const recordId = args.get("record")?.[0];
 
   if (recordId) {
     const binding = getWorkspaceBinding(input.cwd);
     if (!binding) {
-      input.writeStderr("No workspace binding found. Run `agent-memory resolve` first before recording a discovered Codex locator.\n");
+      input.writeStderr(`No workspace binding found. Run \`agent-memory resolve\` first before recording a discovered ${adapter.displayName} locator.\n`);
       return 1;
     }
     const candidate = candidates.find((item) => item.id === recordId);
     if (!candidate) {
-      input.writeStderr(`No Codex discovery candidate found for id: ${recordId}\n`);
+      input.writeStderr(`No ${adapter.displayName} discovery candidate found for id: ${recordId}\n`);
       return 1;
     }
     const record = saveBoundAgentSessionLocator(input.cwd, {
       binding,
       record: {
-        agentCli: "codex",
+        agentCli: candidate.agentCli,
         locator: candidate.locator,
         sessionPath: candidate.sessionPath,
-        providerLabel: stringMetadata(candidate.metadata.providerLabel) ?? "codex",
+        providerLabel: stringMetadata(candidate.metadata.providerLabel) ?? stringMetadata(candidate.metadata.provider) ?? candidate.agentCli,
         baseUrl: stringMetadata(candidate.metadata.baseUrl),
         metadata: {
-          discovery: "codex",
+          discovery: candidate.agentCli,
           candidateId: candidate.id,
           fileName: candidate.fileName,
           sizeBytes: candidate.sizeBytes,
@@ -70,7 +113,7 @@ export async function discoverCommand(
     }
 
     input.writeStdout([
-      "Recorded discovered Codex locator.",
+      `Recorded discovered ${adapter.displayName} locator.`,
       `candidateId: ${candidate.id}`,
       `locator: ${record.locator}`,
       `projectId: ${record.projectId}`,
@@ -81,18 +124,30 @@ export async function discoverCommand(
   }
 
   if (args.has("json")) {
-    input.writeStdout(`${JSON.stringify({ codexHome, candidates }, null, 2)}\n`);
+    input.writeStdout(`${JSON.stringify({ agentCli: adapter.agentCli, home, candidates }, null, 2)}\n`);
     return 0;
   }
 
-  input.writeStdout(formatCodexDiscovery(codexHome, candidates));
+  input.writeStdout(formatDiscovery(adapter, home, candidates));
   return 0;
 }
 
-export function discoverCodexCandidates(codexHome: string): CodexCandidate[] {
+export function discoverCodexCandidates(codexHome: string) {
+  return discoverCandidates(DISCOVERY_ADAPTERS.codex, codexHome);
+}
+
+function isDiscoveryAgentCli(value: string): value is DiscoveryAgentCli {
+  return value === "codex" || value === "gemini" || value === "claude";
+}
+
+function resolveDiscoveryHome(args: Map<string, string[]>, adapter: DiscoveryAdapter) {
+  return args.get("home")?.[0] ?? args.get(adapter.homeAlias)?.[0] ?? adapter.defaultHome;
+}
+
+function discoverCandidates(adapter: DiscoveryAdapter, home: string): DiscoveryCandidate[] {
   let files: string[] = [];
   try {
-    files = walkFiles(codexHome).filter((file) => /\.(json|jsonl|md|txt)$/i.test(file));
+    files = walkFiles(home).filter((file) => /\.(json|jsonl|md|txt)$/i.test(file));
   } catch {
     return [];
   }
@@ -103,17 +158,17 @@ export function discoverCodexCandidates(codexHome: string): CodexCandidate[] {
     const locator = stringMetadata(metadata.sessionId)
       ?? stringMetadata(metadata.conversationId)
       ?? stringMetadata(metadata.id)
-      ?? path.relative(codexHome, file);
+      ?? path.relative(home, file);
     return {
-      id: `codex-${index + 1}`,
-      agentCli: "codex",
+      id: `${adapter.agentCli}-${index + 1}`,
+      agentCli: adapter.agentCli,
       locator,
       sessionPath: file,
       fileName: path.basename(file),
       sizeBytes: stat.size,
       modifiedAt: stat.mtime.toISOString(),
       metadata
-    };
+    } satisfies DiscoveryCandidate;
   });
 }
 
@@ -139,7 +194,7 @@ function readSafeTopLevelMetadata(file: string): Record<string, unknown> {
     const text = readFileSync(file, "utf8").slice(0, 64 * 1024);
     const parsed = JSON.parse(text) as Record<string, unknown>;
     const metadata: Record<string, unknown> = {};
-    for (const key of ["id", "sessionId", "conversationId", "providerLabel", "baseUrl", "createdAt", "updatedAt", "model"] as const) {
+    for (const key of SAFE_TOP_LEVEL_KEYS) {
       if (typeof parsed[key] === "string") {
         metadata[key] = sanitizeMetadataValue(parsed[key]);
       }
@@ -166,21 +221,21 @@ function stringMetadata(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-function formatCodexDiscovery(codexHome: string, candidates: CodexCandidate[]) {
+function formatDiscovery(adapter: DiscoveryAdapter, home: string, candidates: DiscoveryCandidate[]) {
   const lines = [
-    "Codex discovery",
-    `codexHome: ${codexHome}`,
+    `${adapter.displayName} discovery`,
+    `home: ${home}`,
     `candidateCount: ${candidates.length}`,
     "metadata: metadata only; transcript/message/content fields are not imported.",
     ""
   ];
   if (candidates.length === 0) {
-    lines.push("No Codex locator candidates found.");
+    lines.push(`No ${adapter.displayName} locator candidates found.`);
   } else {
     for (const candidate of candidates) {
       lines.push(`- ${candidate.id} ${candidate.locator} | file=${candidate.fileName} | size=${candidate.sizeBytes} | modifiedAt=${candidate.modifiedAt}`);
     }
   }
-  lines.push("", "To record: agent-memory discover codex --record <candidate-id>");
+  lines.push("", `To record: agent-memory discover ${adapter.agentCli} --record <candidate-id>`);
   return `${lines.join("\n")}\n`;
 }

@@ -26,7 +26,7 @@ AMS-003 这次展示的连续性流只记录这些内容：
 
 不会做这些事：
 
-- 不读取 `~/.codex`
+ - 不读取私有 CLI transcript
 - 不导入真实私有会话内容
 - 不上传 transcript
 
@@ -51,8 +51,8 @@ pnpm -C apps/cli start demo codex-continuity --json
 当前 M2 边界：
 
 - 这只是把现有手工链路产品化封装成一个入口
-- 还不支持真实 Codex locator discovery
-- 不读取 `~/.codex`，不上传 transcript
+- 当前已支持第一版跨 CLI metadata discovery（Codex/Gemini/Claude），但仍不导入正文
+- 不读取私有 CLI transcript，不上传 transcript
 - 如果 API 没有启动，demo 会在 `resolve` 阶段直接失败，因为当前仍依赖 `AGENT_MEMORY_BASE_URL`
 
 完整演示文档见：[`docs/demo/codex-base-url-continuity.md`](docs/demo/codex-base-url-continuity.md)
@@ -95,7 +95,7 @@ pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 ## 安全承诺
 
 - 只保存 metadata
-- 不读取 `~/.codex` 原文
+- 不读取私有 CLI transcript 原文
 - 不上传 transcript
 - 不导入真实私有会话内容
 
@@ -159,13 +159,15 @@ pnpm -C apps/api test
 pnpm -C apps/api typecheck
 ```
 
-### 发现 Codex locator metadata
+### 发现多 CLI locator metadata
 
 跑通 demo 后，可以尝试第一版真实 metadata discovery：
 
 ```bash
-agent-memory discover codex --codex-home ~/.codex
+agent-memory discover codex --home ~/.codex
+agent-memory discover gemini --gemini-home ~/.gemini
+agent-memory discover claude --claude-home ~/.claude
 agent-memory discover codex --codex-home ~/.codex --record codex-1
 ```
 
-Discovery 只处理 metadata：候选路径、文件统计信息和安全的顶层标识。它不会导入 transcript/message/content 字段，也不会上传私人会话内容。
+M4 第一版 Discovery 现已支持 Codex、Gemini、Claude 三类 CLI，且只处理 metadata：候选路径、文件统计信息和安全的顶层标识。它不会导入 transcript/message/content/token/query 字段，也不会上传私人会话内容。

@@ -315,7 +315,7 @@
 
 - 可以说“当前已支持 CLI-first continuity bridge 与 Codex provider/base URL 切换演示”。
 - 不可以说“当前已完成真实 Codex locator discovery”。
-- 不可以说“当前已完成跨 CLI metadata discovery”。
+- 可以说“当前已完成 M4 第一版跨 CLI metadata discovery（Codex、Gemini、Claude，且仅限 metadata-only）”。
 - 不可以说“当前已完成 MCP / IDE 集成”。
 - 不可以承诺“项目一定获得 `1000+ GitHub stars`”；只能说这是一个开源增长目标与路线图校准目标。
 
@@ -327,8 +327,8 @@
 
 当前仓库已经能证明“同一 workspace 在 provider/base URL 切换后仍保持 project/task 连续性”的最小产品事实。接下来的路线图重点不是发明新的上层叙事，而是在守住安全边界的前提下，持续降低试用门槛、增强真实 discovery、扩展跨入口读取能力，并用清晰传播资产把这条产品主线讲明白。
 
-### Codex metadata discovery
+### M4 cross-CLI metadata discovery
 
-M3 introduces `agent-memory discover codex` as the first real Codex locator discovery path. It can scan an explicit `--codex-home` (or `~/.codex`) for candidate session locators, list metadata-only candidates, and record a selected candidate with `--record <candidate-id>` after the current workspace has been resolved.
+M4 extends discovery to `agent-memory discover codex|gemini|claude` as the first cross-CLI metadata discovery path. It can scan an explicit `--home` or source-specific home flag for candidate session locators, list metadata-only candidates, and record a selected candidate with `--record <candidate-id>` after the current workspace has been resolved.
 
 The boundary is strict: discovery may use candidate paths, file stats, and safe top-level identifiers such as session ids or sanitized base URL origins. It must not import transcript/message/content fields, must not echo token query strings, and must not upload private session content.
