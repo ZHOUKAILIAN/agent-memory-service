@@ -175,3 +175,7 @@ M4 第一版 Discovery 现已支持 Codex、Gemini、Claude 三类 CLI，且只�
 ### 跨 CLI discovery 打磨
 
 `agent-memory discover all` 可以一次扫描 Codex、Gemini、Claude home，并按 CLI 分组展示 metadata-only 候选。`agent-memory doctor` 也会显示当前 workspace/task 的跨 CLI 覆盖度，方便判断哪些 agent 已经记录 locator。
+
+### 生成可分享的 smoke report
+
+使用 `agent-memory doctor --report` 可以生成 Markdown smoke report，包含绑定状态、跨 CLI 覆盖度、最近 locators、安全边界和下一步建议。它适合粘贴到 issue、release notes 或 onboarding 文档中，并且不会泄露 token query。

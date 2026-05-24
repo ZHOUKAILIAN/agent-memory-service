@@ -336,3 +336,7 @@ The boundary is strict: discovery may use candidate paths, file stats, and safe 
 ### M4.1 discovery UX polish
 
 M4.1 adds `agent-memory discover all`, candidate reason/source summaries, and doctor cross-CLI coverage. This turns discovery from separate commands into a product-readable diagnostic flow while preserving the metadata-only boundary.
+
+### M4.2 smoke report
+
+M4.2 adds `agent-memory doctor --report`, a Markdown diagnostic report that summarizes workspace binding, locator coverage, recent locators, safety boundaries, and next steps. The report is intended for issues, onboarding, and release notes while preserving token/base URL sanitization.

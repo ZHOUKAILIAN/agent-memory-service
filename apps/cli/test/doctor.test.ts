@@ -108,3 +108,31 @@ test("doctor shows binding and record guidance when workspace has no locators", 
   assert.match(output, /Locator count: 0/);
   assert.match(output, /agent-sessions record/);
 });
+
+
+test("doctor --report returns a Markdown smoke report", async () => {
+  const tempDir = await setupBoundWorkspace();
+  await runCli(["agent-sessions", "record", "--agent-cli", "codex", "--locator", "codex-report", "--base-url", "https://report.example/v1?token=secret"], {
+    cwd: tempDir,
+    writeStdout: () => {},
+    writeStderr: () => {}
+  });
+  const writes: string[] = [];
+
+  const exitCode = await runCli(["doctor", "--report"], {
+    cwd: tempDir,
+    writeStdout: (chunk) => writes.push(chunk)
+  });
+
+  assert.equal(exitCode, 0);
+  const output = writes.join("");
+  assert.match(output, /# agent-memory doctor report/);
+  assert.match(output, /## Summary/);
+  assert.match(output, /## Coverage by CLI/);
+  assert.match(output, /\| codex \| 1 \|/);
+  assert.match(output, /\| codex \| codex-report \|/);
+  assert.match(output, /https:\/\/report\.example/);
+  assert.match(output, /## Safety/);
+  assert.match(output, /Does not read private CLI transcripts/);
+  assert.doesNotMatch(output, /token=secret/);
+});

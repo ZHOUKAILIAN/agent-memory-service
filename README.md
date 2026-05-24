@@ -171,3 +171,7 @@ M4 discovery is metadata-only across Codex, Gemini, and Claude: it uses candidat
 ### Cross-CLI discovery polish
 
 `agent-memory discover all` scans Codex, Gemini, and Claude homes in one pass and groups metadata-only candidates by CLI. `agent-memory doctor` also reports cross-CLI coverage so you can see which agents already have locators attached to the current workspace/task.
+
+### Share a smoke report
+
+Use `agent-memory doctor --report` to generate a Markdown smoke report with binding status, cross-CLI coverage, recent locators, safety boundaries, and next steps. It is designed to be pasted into issues, release notes, or onboarding docs without leaking token query strings.
