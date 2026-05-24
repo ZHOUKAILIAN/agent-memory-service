@@ -8,5 +8,8 @@
     "test": "node --test --experimental-strip-types test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:e2e": "node --test --experimental-strip-types test/*.e2e.test.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }
