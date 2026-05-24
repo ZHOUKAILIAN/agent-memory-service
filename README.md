@@ -122,6 +122,7 @@ Expected result:
 - `resolve`: bind the current workspace to a project/task
 - `context`: fetch the current context bundle
 - `checkpoint`: write task progress and decisions
+- `handoff create|resume`: create structured continuation context from one agent/provider and render it for the next one
 - `flush-outbox`: retry deferred sync events
 - `agent-sessions record|list`: record and inspect agent session locators
 - `demo codex-continuity`: run the M2 one-command continuity demo with human-readable or `--json` output
