@@ -6,6 +6,7 @@ import { demoCommand } from "./commands/demo.ts";
 import { discoverCommand } from "./commands/discover.ts";
 import { doctorCommand } from "./commands/doctor.ts";
 import { flushOutboxCommand } from "./commands/flush-outbox.ts";
+import { handoffCommand } from "./commands/handoff.ts";
 import { resolveCommand } from "./commands/resolve.ts";
 import { createHttpApiClient, type ApiClient } from "./http/client.ts";
 
@@ -17,9 +18,11 @@ export type CliIo = {
   writeStderr?: (chunk: string) => void;
 };
 
-const helpText = `Commands: resolve, doctor, context, checkpoint, flush-outbox, agent-sessions, demo, discover
+const helpText = `Commands: resolve, doctor, context, checkpoint, handoff, flush-outbox, agent-sessions, demo, discover
 Global flags: --workspace <path>
 doctor flags: --json for machine-readable output, --report for Markdown smoke report
+handoff: handoff create --summary <text> [--from <agent>] [--to <agent>] [--status <text>] [--decision <text>] [--constraint <text>] [--next-step <text>]
+handoff: handoff resume [--limit <n>] [--json]
 agent-sessions/demo/discover flags: --json for machine-readable output
 Demo: demo codex-continuity [--workspace <path>] [--json]
 Discovery: discover <codex|gemini|claude|all> [--home <path>] [--codex-home <path>] [--gemini-home <path>] [--claude-home <path>] [--json] [--record <candidate-id>]
@@ -72,6 +75,17 @@ export async function runCli(argv: string[], io: CliIo = {}) {
 
   if (command === "checkpoint") {
     return await checkpointCommand(flags, {
+      apiClient,
+      cwd,
+      writeStdout,
+      writeStderr
+    });
+  }
+
+  if (command === "handoff") {
+    const subcommand = argv[1] ?? "resume";
+    flags.set("_subcommand", [subcommand]);
+    return await handoffCommand(flags, {
       apiClient,
       cwd,
       writeStdout,
