@@ -10,9 +10,9 @@ import {
   formatAgentSessionLocatorSummary,
   saveBoundAgentSessionLocator
 } from "./agent-sessions.ts";
-import { getWorkspaceBinding, listAgentSessionLocators } from "../storage/sqlite.ts";
+import { getWorkspaceBinding, listAgentSessionLocators, type WorkspaceBinding } from "../storage/sqlite.ts";
 
-type CodexContinuityDemoResult = {
+type CodexDemoResult = {
   demo: "codex-continuity";
   workspace: {
     path: string;
@@ -41,8 +41,7 @@ type CodexContinuityDemoResult = {
   };
 };
 
-
-type HandoffContinuityDemoResult = {
+type HandoffDemoResult = {
   demo: "handoff-continuity";
   workspace: {
     path: string;
@@ -51,7 +50,7 @@ type HandoffContinuityDemoResult = {
   binding: {
     projectId: string;
     projectName: string;
-    taskId: string;
+    taskId: string | null;
     taskTitle: string | null;
   };
   handoff: {
@@ -68,10 +67,10 @@ type HandoffContinuityDemoResult = {
     context: TaskContextBundle;
   };
   checks: {
-    sameTask: boolean;
-    structuredContext: boolean;
-    transcriptImport: boolean;
+    sameProjectTask: boolean;
+    structuredContextOnly: boolean;
     hasNextStep: boolean;
+    hasSafetyBoundary: boolean;
   };
 };
 
@@ -87,6 +86,16 @@ const DEMO_LOCATORS = [
     baseUrl: "https://api.second.example/v1?token=fake-secret-b"
   }
 ] as const;
+
+const HANDOFF_FIXTURE = {
+  from: "provider-b",
+  to: "provider-a",
+  summary: "Provider B finished discovery UX polish",
+  status: "Ready for provider A to continue",
+  decisions: ["Provider/base URL remains source metadata, not task identity"],
+  constraints: ["Do not import private transcripts"],
+  nextSteps: ["Continue implementation from provider A"]
+} as const;
 
 export async function demoCommand(
   args: Map<string, string[]>,
@@ -106,18 +115,26 @@ export async function demoCommand(
   }
 
   try {
-    const result = subcommand === "handoff-continuity"
-      ? await runHandoffContinuityDemo(args, input)
-      : await runCodexContinuityDemo(args, input);
+    if (subcommand === "handoff-continuity") {
+      const result = await runHandoffContinuityDemo(args, input);
+
+      if (args.has("json")) {
+        input.writeStdout(`${JSON.stringify(result, null, 2)}\n`);
+        return 0;
+      }
+
+      input.writeStdout(formatHandoffDemoSummary(result));
+      return 0;
+    }
+
+    const result = await runCodexContinuityDemo(args, input);
 
     if (args.has("json")) {
       input.writeStdout(`${JSON.stringify(result, null, 2)}\n`);
       return 0;
     }
 
-    input.writeStdout(result.demo === "handoff-continuity"
-      ? formatHandoffDemoSummary(result)
-      : formatDemoSummary(result));
+    input.writeStdout(formatCodexDemoSummary(result));
     return 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -133,23 +150,10 @@ export async function runCodexContinuityDemo(
     cwd: string;
     env?: NodeJS.ProcessEnv;
   }
-): Promise<CodexContinuityDemoResult> {
-  const requestedWorkspace = args.get("workspace")?.[0];
-  const workspace = prepareDemoWorkspace(requestedWorkspace);
-
+): Promise<CodexDemoResult> {
+  const workspace = prepareDemoWorkspace(args.get("workspace")?.[0]);
   assertWorkspaceIsClean(workspace.path);
-
-  const resolveArgs = new Map<string, string[]>([
-    ["name", [args.get("name")?.[0] ?? "codex-continuity-demo-task"]],
-    ["project-name", [args.get("project-name")?.[0] ?? "codex-continuity-demo-project"]],
-    ["description", [args.get("description")?.[0] ?? "Created by agent-memory demo"]],
-    ["project-description", [args.get("project-description")?.[0] ?? "Created by agent-memory demo"]]
-  ]);
-
-  const binding = await resolveWorkspaceBinding(resolveArgs, {
-    apiClient: input.apiClient,
-    cwd: workspace.path
-  });
+  const binding = await resolveDemoBinding(args, input.apiClient, workspace.path, "codex-continuity");
 
   const records = DEMO_LOCATORS.map((locatorInput) => saveBoundAgentSessionLocator(workspace.path, {
     binding,
@@ -169,12 +173,7 @@ export async function runCodexContinuityDemo(
   return {
     demo: "codex-continuity",
     workspace,
-    binding: {
-      projectId: binding.projectId,
-      projectName: binding.projectName,
-      taskId: binding.taskId ?? null,
-      taskTitle: binding.taskTitle ?? null
-    },
+    binding: serializeBinding(binding),
     locators: records.map((record) => ({
       agentCli: "codex" as const,
       locator: record.locator,
@@ -193,6 +192,62 @@ export async function runCodexContinuityDemo(
   };
 }
 
+export async function runHandoffContinuityDemo(
+  args: Map<string, string[]>,
+  input: {
+    apiClient: ApiClient;
+    cwd: string;
+  }
+): Promise<HandoffDemoResult> {
+  const workspace = prepareDemoWorkspace(args.get("workspace")?.[0]);
+  assertWorkspaceIsClean(workspace.path);
+  const binding = await resolveDemoBinding(args, input.apiClient, workspace.path, "handoff-continuity");
+
+  if (!binding.taskId) {
+    throw new Error("Demo failed: resolved workspace has no task binding.");
+  }
+
+  const handoffContent = renderDemoHandoffContent(HANDOFF_FIXTURE);
+
+  await input.apiClient.createTaskCheckpoint(binding.taskId, {
+    source: HANDOFF_FIXTURE.from,
+    summary: HANDOFF_FIXTURE.summary,
+    content: handoffContent,
+    current_status: HANDOFF_FIXTURE.status,
+    decisions: [...HANDOFF_FIXTURE.decisions],
+    constraints: [...HANDOFF_FIXTURE.constraints],
+    next_steps: [...HANDOFF_FIXTURE.nextSteps]
+  });
+
+  const context = await input.apiClient.getTaskContext(binding.taskId, 3);
+  const prompt = renderDemoResumePrompt(workspace.path, context);
+
+  return {
+    demo: "handoff-continuity",
+    workspace,
+    binding: serializeBinding(binding),
+    handoff: {
+      from: HANDOFF_FIXTURE.from,
+      to: HANDOFF_FIXTURE.to,
+      summary: HANDOFF_FIXTURE.summary,
+      status: HANDOFF_FIXTURE.status,
+      decisions: [...HANDOFF_FIXTURE.decisions],
+      constraints: [...HANDOFF_FIXTURE.constraints],
+      nextSteps: [...HANDOFF_FIXTURE.nextSteps]
+    },
+    resume: {
+      prompt,
+      context
+    },
+    checks: {
+      sameProjectTask: context.project.id === binding.projectId && context.task.id === binding.taskId,
+      structuredContextOnly: true,
+      hasNextStep: prompt.includes(HANDOFF_FIXTURE.nextSteps[0]),
+      hasSafetyBoundary: /not a raw transcript import/i.test(prompt)
+    }
+  };
+}
+
 function prepareDemoWorkspace(requestedWorkspace?: string) {
   if (!requestedWorkspace) {
     return {
@@ -206,6 +261,25 @@ function prepareDemoWorkspace(requestedWorkspace?: string) {
     path: requestedWorkspace,
     temporary: false
   };
+}
+
+async function resolveDemoBinding(
+  args: Map<string, string[]>,
+  apiClient: ApiClient,
+  workspacePath: string,
+  demoName: string
+) {
+  const resolveArgs = new Map<string, string[]>([
+    ["name", [args.get("name")?.[0] ?? `${demoName}-demo-task`]],
+    ["project-name", [args.get("project-name")?.[0] ?? `${demoName}-demo-project`]],
+    ["description", [args.get("description")?.[0] ?? "Created by agent-memory demo"]],
+    ["project-description", [args.get("project-description")?.[0] ?? "Created by agent-memory demo"]]
+  ]);
+
+  return await resolveWorkspaceBinding(resolveArgs, {
+    apiClient,
+    cwd: workspacePath
+  });
 }
 
 function assertWorkspaceIsClean(workspacePath: string) {
@@ -232,7 +306,16 @@ function validateDemoSnapshot(projectId: string, taskId: string | null, doctor: 
   }
 }
 
-function formatDemoSummary(result: CodexContinuityDemoResult) {
+function serializeBinding(binding: WorkspaceBinding) {
+  return {
+    projectId: binding.projectId,
+    projectName: binding.projectName,
+    taskId: binding.taskId ?? null,
+    taskTitle: binding.taskTitle ?? null
+  };
+}
+
+function formatCodexDemoSummary(result: CodexDemoResult) {
   const lines = [
     "Codex continuity demo completed.",
     `Workspace: ${result.workspace.path}`,
@@ -274,147 +357,97 @@ function formatDemoSummary(result: CodexContinuityDemoResult) {
   return `${lines.join("\n")}\n`;
 }
 
-
-export async function runHandoffContinuityDemo(
-  args: Map<string, string[]>,
-  input: {
-    apiClient: ApiClient;
-    cwd: string;
-    env?: NodeJS.ProcessEnv;
-  }
-): Promise<HandoffContinuityDemoResult> {
-  const requestedWorkspace = args.get("workspace")?.[0];
-  const workspace = prepareDemoWorkspace(requestedWorkspace);
-
-  assertWorkspaceIsClean(workspace.path);
-
-  const resolveArgs = new Map<string, string[]>([
-    ["name", [args.get("name")?.[0] ?? "handoff-continuity-demo-task"]],
-    ["project-name", [args.get("project-name")?.[0] ?? "handoff-continuity-demo-project"]],
-    ["description", [args.get("description")?.[0] ?? "Created by agent-memory handoff demo"]],
-    ["project-description", [args.get("project-description")?.[0] ?? "Created by agent-memory handoff demo"]]
-  ]);
-
-  const binding = await resolveWorkspaceBinding(resolveArgs, {
-    apiClient: input.apiClient,
-    cwd: workspace.path
-  });
-
-  if (!binding.taskId) {
-    throw new Error("Demo failed: resolve did not produce a task binding.");
-  }
-
-  const handoff = {
-    from: args.get("from")?.[0] ?? "provider-b",
-    to: args.get("to")?.[0] ?? "provider-a",
-    summary: args.get("summary")?.[0] ?? "Provider B finished the current implementation slice",
-    status: args.get("status")?.[0] ?? "Ready for provider A to continue",
-    decisions: args.get("decision") ?? ["Keep provider/base URL as locator metadata, not task identity"],
-    constraints: args.get("constraint") ?? ["Do not import private transcripts"],
-    nextSteps: args.get("next-step") ?? ["Provider A should resume from the structured handoff context"]
-  };
-
-  const content = [
-    "# Agent handoff",
-    "",
-    `From: ${handoff.from}`,
-    `To: ${handoff.to}`,
-    "",
-    `Summary: ${handoff.summary}`,
-    `Status: ${handoff.status}`,
-    "",
-    "Safety boundary: structured continuation context only; no private transcript import."
-  ].join("\n");
-
-  await input.apiClient.createTaskCheckpoint(binding.taskId, {
-    source: handoff.from,
-    summary: handoff.summary,
-    content,
-    current_status: handoff.status,
-    decisions: handoff.decisions,
-    constraints: handoff.constraints,
-    next_steps: handoff.nextSteps
-  });
-
-  const context = await input.apiClient.getTaskContext(binding.taskId, 3);
-  const prompt = renderHandoffDemoResumePrompt(workspace.path, context, handoff.to);
-
-  return {
-    demo: "handoff-continuity",
-    workspace,
-    binding: {
-      projectId: binding.projectId,
-      projectName: binding.projectName,
-      taskId: binding.taskId,
-      taskTitle: binding.taskTitle ?? null
-    },
-    handoff,
-    resume: {
-      prompt,
-      context
-    },
-    checks: {
-      sameTask: context.task.id === binding.taskId,
-      structuredContext: /structured continuation context/i.test(content),
-      transcriptImport: false,
-      hasNextStep: context.summary.next_steps.length > 0
-    }
-  };
-}
-
-function renderHandoffDemoResumePrompt(workspacePath: string, context: TaskContextBundle, targetAgent: string) {
-  const lines = [
-    `# Resume for ${targetAgent}`,
-    "",
-    "Continue the same task using AMS structured handoff context.",
-    "",
-    `Workspace: ${workspacePath}`,
-    `Project: ${context.project.name} (${context.project.id})`,
-    `Task: ${context.task.title} (${context.task.id})`,
-    "",
-    `Current status: ${context.summary.current_status ?? context.summary.summary ?? "-"}`,
-    "",
-    "Next steps:"
-  ];
-
-  if (context.summary.next_steps.length === 0) {
-    lines.push("- none recorded");
-  } else {
-    for (const nextStep of context.summary.next_steps) {
-      lines.push(`- ${nextStep}`);
-    }
-  }
-
-  lines.push(
-    "",
-    "Safety: this is not a raw transcript import; continue from structured summaries, decisions, constraints, and next steps."
-  );
-
-  return `${lines.join("\n")}\n`;
-}
-
-function formatHandoffDemoSummary(result: HandoffContinuityDemoResult) {
+function formatHandoffDemoSummary(result: HandoffDemoResult) {
   const lines = [
     "Handoff continuity demo completed.",
     `Workspace: ${result.workspace.path}`,
     `Workspace mode: ${result.workspace.temporary ? "temporary" : "provided"}`,
     `projectId: ${result.binding.projectId}`,
-    `taskId: ${result.binding.taskId}`,
+    `taskId: ${result.binding.taskId ?? "-"}`,
     "",
-    `Step 1: ${result.handoff.from} wrote a structured handoff checkpoint.`,
-    `Summary: ${result.handoff.summary}`,
-    `Status: ${result.handoff.status}`,
+    "Step 1: provider-b wrote a structured handoff checkpoint.",
+    `summary: ${result.handoff.summary}`,
+    `status: ${result.handoff.status}`,
     "",
-    `Step 2: ${result.handoff.to} can resume from AMS context.`,
+    "Step 2: provider-a rendered a resume prompt from the same task context.",
     "",
     result.resume.prompt.trim(),
     "",
-    `Same task: ${result.checks.sameTask ? "yes" : "no"}`,
-    `Structured context: ${result.checks.structuredContext ? "yes" : "no"}`,
-    `Transcript import: ${result.checks.transcriptImport ? "yes" : "no"}`,
+    `Same project/task: ${result.checks.sameProjectTask ? "yes" : "no"}`,
+    `Structured context only: ${result.checks.structuredContextOnly ? "yes" : "no"}`,
     `Has next step: ${result.checks.hasNextStep ? "yes" : "no"}`,
-    "Result: provider/baseUrl B can hand off structured continuation context that provider/baseUrl A can read and continue."
+    `Has safety boundary: ${result.checks.hasSafetyBoundary ? "yes" : "no"}`,
+    "Result: provider/baseUrl B can hand off structured continuation context that provider/baseUrl A can resume."
   ];
 
   return `${lines.join("\n")}\n`;
+}
+
+function renderDemoHandoffContent(input: typeof HANDOFF_FIXTURE) {
+  return [
+    "# Agent handoff",
+    "",
+    `From: ${input.from}`,
+    `To: ${input.to}`,
+    "",
+    `Summary: ${input.summary}`,
+    `Status: ${input.status}`,
+    "",
+    "## Decisions",
+    ...input.decisions.map((item) => `- ${item}`),
+    "",
+    "## Constraints",
+    ...input.constraints.map((item) => `- ${item}`),
+    "",
+    "## Next steps",
+    ...input.nextSteps.map((item) => `- ${item}`),
+    "",
+    "Safety boundary: this handoff is structured continuation context, not a private transcript import."
+  ].join("\n");
+}
+
+function renderDemoResumePrompt(workspacePath: string, context: TaskContextBundle) {
+  const lines = [
+    "# Continue this agent task",
+    "",
+    "Use this structured handoff context to continue the same engineering thread. Do not treat it as a private transcript dump.",
+    "",
+    "## Identity",
+    "",
+    `Workspace: ${workspacePath}`,
+    `Project: ${context.project.name} (${context.project.id})`,
+    `Task: ${context.task.title} (${context.task.id})`,
+    "",
+    "## Current status",
+    "",
+    context.summary.current_status || context.summary.summary || "No current status recorded.",
+    "",
+    "## Decisions",
+    "",
+    ...formatList(context.summary.active_decisions),
+    "",
+    "## Constraints",
+    "",
+    ...formatList(context.summary.active_constraints),
+    "",
+    "## Next steps",
+    "",
+    ...formatList(context.summary.next_steps),
+    "",
+    "## Recent checkpoints",
+    "",
+    ...(context.checkpoints.recent.length === 0
+      ? ["- none recorded"]
+      : context.checkpoints.recent.map((checkpoint) => `- ${checkpoint.summary} (${checkpoint.source}, ${checkpoint.created_at})`)),
+    "",
+    "## Safety boundary",
+    "",
+    "This context comes from AMS structured summaries/checkpoints. It is not a raw transcript import and should not contain tokens, cookies, Authorization headers, or private conversation dumps."
+  ];
+
+  return `${lines.join("\n")}\n`;
+}
+
+function formatList(items: string[]) {
+  return items.length === 0 ? ["- none recorded"] : items.map((item) => `- ${item}`);
 }

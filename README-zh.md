@@ -59,6 +59,8 @@ M2 当前已经提供第一版一键 demo，用一条命令就能跑通 Codex pr
 export AGENT_MEMORY_BASE_URL="http://localhost:3000"
 pnpm -C apps/cli start demo codex-continuity
 pnpm -C apps/cli start demo codex-continuity --json
+pnpm -C apps/cli start demo handoff-continuity
+pnpm -C apps/cli start demo handoff-continuity --json
 ```
 
 它会自动完成：
@@ -66,6 +68,7 @@ pnpm -C apps/cli start demo codex-continuity --json
 - 默认创建临时 workspace，或使用你传入的 `--workspace <path>`
 - 调用 `resolve` 建立 `projectId` / `taskId` 绑定
 - 写入两条固定的 fake Codex locator，分别代表不同 provider/base URL
+- 对于 `demo handoff-continuity`，写入 provider-b 的 handoff checkpoint，并从同一个 task context 渲染 provider-a 的 resume prompt
 - 运行 `doctor` 汇总结果，并输出人类可读文本或 `--json`
 - 全程只保存 metadata，且不会回显 fake query token
 
@@ -129,7 +132,8 @@ pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 - `handoff create|resume`：让一个 agent/provider 写入结构化 continuation context，并为下一个 agent/provider 渲染可继续的上下文
 - `flush-outbox`：重试补传延迟事件
 - `agent-sessions record|list`：记录并查看 agent session locator
-- `demo codex-continuity`：运行 M2 一键连续性 demo，支持默认可读输出与 `--json`
+- `demo codex-continuity`：运行 M2 一键 locator 连续性 demo，支持默认可读输出与 `--json`
+- `demo handoff-continuity`：运行 handoff/resume demo，让 provider-b 写入 continuation context，再由 provider-a 读取并继续
 
 `doctor` 是当前 M1 onboarding 入口，用来快速判断当前 workspace 是否已经跑通连续性链路；需要脚本消费时可加 `--json`。
 
