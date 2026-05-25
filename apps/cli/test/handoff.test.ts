@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdtemp } from "node:fs/promises";
+import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -36,6 +37,15 @@ async function setupBoundWorkspace() {
   });
 
   return tempDir;
+}
+
+function countOutboxEvents(cwd: string) {
+  const database = new DatabaseSync(path.join(cwd, ".agent-memory", "bridge.sqlite"));
+  const row = database
+    .prepare("select count(*) as count from outbox_events")
+    .get() as { count: number };
+  database.close();
+  return row.count;
 }
 
 function taskContext(): TaskContextBundle {
@@ -116,7 +126,7 @@ test("handoff create writes structured continuation context to the bound task", 
   assert.match(checkpoints[0]?.content ?? "", /# Agent handoff/);
   assert.match(checkpoints[0]?.content ?? "", /Safety boundary/);
   assert.deepEqual(checkpoints[0]?.nextSteps, ["Continue implementation from provider A"]);
-  assert.match(writes.join(""), /Handoff checkpoint created/);
+  assert.match(writes.join(""), /Handoff checkpoint sent/);
   assert.match(writes.join(""), /taskId: tsk_123/);
 });
 
@@ -162,4 +172,48 @@ test("handoff resume --json returns stable structured payload", async () => {
   assert.equal(payload.task.id, "tsk_123");
   assert.equal(payload.safety.transcriptImport, false);
   assert.deepEqual(payload.summary.next_steps, ["Continue implementation from provider A"]);
+});
+
+
+test("handoff create queues continuation context when delivery fails", async () => {
+  const tempDir = await setupBoundWorkspace();
+  const writes: string[] = [];
+
+  const queuedExitCode = await runCli([
+    "handoff",
+    "create",
+    "--from", "provider-b",
+    "--to", "provider-a",
+    "--summary", "Finished discovery UX polish",
+    "--status", "Ready for handoff",
+    "--next-step", "Continue implementation from provider A"
+  ], {
+    cwd: tempDir,
+    apiClient: {
+      createTaskCheckpoint: async () => {
+        throw new Error("network down");
+      }
+    },
+    writeStdout: (chunk) => writes.push(chunk),
+    writeStderr: (chunk) => writes.push(chunk)
+  });
+
+  assert.equal(queuedExitCode, 0);
+  assert.equal(countOutboxEvents(tempDir), 1);
+  assert.match(writes.join(""), /Handoff checkpoint queued/);
+
+  const calls: string[] = [];
+  const flushedExitCode = await runCli(["flush-outbox"], {
+    cwd: tempDir,
+    apiClient: {
+      createTaskCheckpoint: async (taskId, input) => {
+        calls.push(`${taskId}:${input.source}:${input.summary}:${input.next_steps.join(",")}`);
+      }
+    },
+    writeStdout: () => {}
+  });
+
+  assert.equal(flushedExitCode, 0);
+  assert.equal(countOutboxEvents(tempDir), 0);
+  assert.deepEqual(calls, ["tsk_123:provider-b:Finished discovery UX polish:Continue implementation from provider A"]);
 });
