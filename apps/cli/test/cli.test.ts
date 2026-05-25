@@ -18,9 +18,10 @@ test("runCli prints available commands for help", async () => {
   });
 
   assert.equal(exitCode, 0);
-  assert.match(writes.join(""), /resolve|doctor|context|checkpoint|handoff|flush-outbox|agent-sessions|demo/);
+  assert.match(writes.join(""), /resolve|doctor|context|checkpoint|handoff|baseurl|flush-outbox|agent-sessions|demo/);
   assert.match(writes.join(""), /demo codex-continuity|handoff-continuity/);
   assert.match(writes.join(""), /handoff create/);
+  assert.match(writes.join(""), /baseurl switch/);
 });
 
 test("package exposes the documented agent-memory binary", () => {

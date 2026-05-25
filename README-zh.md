@@ -127,6 +127,7 @@ pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 - `context`：读取当前上下文包
 - `checkpoint`：写入任务进度、决策与下一步
 - `handoff create|resume`：让一个 agent/provider 写入结构化 continuation context，并为下一个 agent/provider 渲染可继续的上下文
+- `baseurl switch`：记录 provider/base URL 切换，保留结构化 continuation context，并写入本地缓存
 - `flush-outbox`：重试补传延迟事件
 - `agent-sessions record|list`：记录并查看 agent session locator
 - `demo codex-continuity`：运行 M2 一键连续性 demo，支持默认可读输出与 `--json`

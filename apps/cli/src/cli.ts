@@ -1,6 +1,7 @@
 import { getBaseUrl } from "./config.ts";
 import { checkpointCommand } from "./commands/checkpoint.ts";
 import { agentSessionsCommand } from "./commands/agent-sessions.ts";
+import { baseurlCommand } from "./commands/baseurl.ts";
 import { contextCommand } from "./commands/context.ts";
 import { demoCommand } from "./commands/demo.ts";
 import { discoverCommand } from "./commands/discover.ts";
@@ -18,11 +19,12 @@ export type CliIo = {
   writeStderr?: (chunk: string) => void;
 };
 
-const helpText = `Commands: resolve, doctor, context, checkpoint, handoff, flush-outbox, agent-sessions, demo, discover
+const helpText = `Commands: resolve, doctor, context, checkpoint, handoff, baseurl, flush-outbox, agent-sessions, demo, discover
 Global flags: --workspace <path>
 doctor flags: --json for machine-readable output, --report for Markdown smoke report
 handoff: handoff create --summary <text> [--from <agent>] [--to <agent>] [--status <text>] [--decision <text>] [--constraint <text>] [--next-step <text>]
 handoff: handoff resume [--limit <n>] [--json]
+baseurl: baseurl switch --agent-cli <codex|gemini|claude|other> --base-url <url> [--provider <label>] [--locator <id>] [--yes] [--no-preserve] [--json]
 agent-sessions/demo/discover flags: --json for machine-readable output
 Demo: demo <codex-continuity|handoff-continuity> [--workspace <path>] [--json]
 Discovery: discover <codex|gemini|claude|all> [--home <path>] [--codex-home <path>] [--gemini-home <path>] [--claude-home <path>] [--json] [--record <candidate-id>]
@@ -86,6 +88,17 @@ export async function runCli(argv: string[], io: CliIo = {}) {
     const subcommand = argv[1] ?? "resume";
     flags.set("_subcommand", [subcommand]);
     return await handoffCommand(flags, {
+      apiClient,
+      cwd,
+      writeStdout,
+      writeStderr
+    });
+  }
+
+  if (command === "baseurl") {
+    const subcommand = argv[1] ?? "switch";
+    flags.set("_subcommand", [subcommand]);
+    return await baseurlCommand(flags, {
       apiClient,
       cwd,
       writeStdout,
