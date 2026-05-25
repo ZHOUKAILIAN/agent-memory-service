@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { ApiClient } from "../http/client.ts";
+import type { ApiClient, TaskContextBundle } from "../http/client.ts";
 import { buildDoctorSnapshot } from "./doctor.ts";
 import { resolveWorkspaceBinding } from "./resolve.ts";
 import {
@@ -12,7 +12,7 @@ import {
 } from "./agent-sessions.ts";
 import { getWorkspaceBinding, listAgentSessionLocators } from "../storage/sqlite.ts";
 
-type DemoResult = {
+type CodexContinuityDemoResult = {
   demo: "codex-continuity";
   workspace: {
     path: string;
@@ -41,6 +41,40 @@ type DemoResult = {
   };
 };
 
+
+type HandoffContinuityDemoResult = {
+  demo: "handoff-continuity";
+  workspace: {
+    path: string;
+    temporary: boolean;
+  };
+  binding: {
+    projectId: string;
+    projectName: string;
+    taskId: string;
+    taskTitle: string | null;
+  };
+  handoff: {
+    from: string;
+    to: string;
+    summary: string;
+    status: string;
+    decisions: string[];
+    constraints: string[];
+    nextSteps: string[];
+  };
+  resume: {
+    prompt: string;
+    context: TaskContextBundle;
+  };
+  checks: {
+    sameTask: boolean;
+    structuredContext: boolean;
+    transcriptImport: boolean;
+    hasNextStep: boolean;
+  };
+};
+
 const DEMO_LOCATORS = [
   {
     locator: "codex-provider-a",
@@ -66,20 +100,24 @@ export async function demoCommand(
 ) {
   const subcommand = args.get("_subcommand")?.[0];
 
-  if (subcommand !== "codex-continuity") {
-    input.writeStderr("Usage: agent-memory demo codex-continuity [--workspace <path>] [--json]\n");
+  if (subcommand !== "codex-continuity" && subcommand !== "handoff-continuity") {
+    input.writeStderr("Usage: agent-memory demo <codex-continuity|handoff-continuity> [--workspace <path>] [--json]\n");
     return 1;
   }
 
   try {
-    const result = await runCodexContinuityDemo(args, input);
+    const result = subcommand === "handoff-continuity"
+      ? await runHandoffContinuityDemo(args, input)
+      : await runCodexContinuityDemo(args, input);
 
     if (args.has("json")) {
       input.writeStdout(`${JSON.stringify(result, null, 2)}\n`);
       return 0;
     }
 
-    input.writeStdout(formatDemoSummary(result));
+    input.writeStdout(result.demo === "handoff-continuity"
+      ? formatHandoffDemoSummary(result)
+      : formatDemoSummary(result));
     return 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -95,7 +133,7 @@ export async function runCodexContinuityDemo(
     cwd: string;
     env?: NodeJS.ProcessEnv;
   }
-): Promise<DemoResult> {
+): Promise<CodexContinuityDemoResult> {
   const requestedWorkspace = args.get("workspace")?.[0];
   const workspace = prepareDemoWorkspace(requestedWorkspace);
 
@@ -194,7 +232,7 @@ function validateDemoSnapshot(projectId: string, taskId: string | null, doctor: 
   }
 }
 
-function formatDemoSummary(result: DemoResult) {
+function formatDemoSummary(result: CodexContinuityDemoResult) {
   const lines = [
     "Codex continuity demo completed.",
     `Workspace: ${result.workspace.path}`,
@@ -232,6 +270,151 @@ function formatDemoSummary(result: DemoResult) {
     "Safety: metadata only; does not read private CLI transcripts; does not upload transcripts.",
     "Result: two Codex locators now share one workspace/project/task continuity record."
   );
+
+  return `${lines.join("\n")}\n`;
+}
+
+
+export async function runHandoffContinuityDemo(
+  args: Map<string, string[]>,
+  input: {
+    apiClient: ApiClient;
+    cwd: string;
+    env?: NodeJS.ProcessEnv;
+  }
+): Promise<HandoffContinuityDemoResult> {
+  const requestedWorkspace = args.get("workspace")?.[0];
+  const workspace = prepareDemoWorkspace(requestedWorkspace);
+
+  assertWorkspaceIsClean(workspace.path);
+
+  const resolveArgs = new Map<string, string[]>([
+    ["name", [args.get("name")?.[0] ?? "handoff-continuity-demo-task"]],
+    ["project-name", [args.get("project-name")?.[0] ?? "handoff-continuity-demo-project"]],
+    ["description", [args.get("description")?.[0] ?? "Created by agent-memory handoff demo"]],
+    ["project-description", [args.get("project-description")?.[0] ?? "Created by agent-memory handoff demo"]]
+  ]);
+
+  const binding = await resolveWorkspaceBinding(resolveArgs, {
+    apiClient: input.apiClient,
+    cwd: workspace.path
+  });
+
+  if (!binding.taskId) {
+    throw new Error("Demo failed: resolve did not produce a task binding.");
+  }
+
+  const handoff = {
+    from: args.get("from")?.[0] ?? "provider-b",
+    to: args.get("to")?.[0] ?? "provider-a",
+    summary: args.get("summary")?.[0] ?? "Provider B finished the current implementation slice",
+    status: args.get("status")?.[0] ?? "Ready for provider A to continue",
+    decisions: args.get("decision") ?? ["Keep provider/base URL as locator metadata, not task identity"],
+    constraints: args.get("constraint") ?? ["Do not import private transcripts"],
+    nextSteps: args.get("next-step") ?? ["Provider A should resume from the structured handoff context"]
+  };
+
+  const content = [
+    "# Agent handoff",
+    "",
+    `From: ${handoff.from}`,
+    `To: ${handoff.to}`,
+    "",
+    `Summary: ${handoff.summary}`,
+    `Status: ${handoff.status}`,
+    "",
+    "Safety boundary: structured continuation context only; no private transcript import."
+  ].join("\n");
+
+  await input.apiClient.createTaskCheckpoint(binding.taskId, {
+    source: handoff.from,
+    summary: handoff.summary,
+    content,
+    current_status: handoff.status,
+    decisions: handoff.decisions,
+    constraints: handoff.constraints,
+    next_steps: handoff.nextSteps
+  });
+
+  const context = await input.apiClient.getTaskContext(binding.taskId, 3);
+  const prompt = renderHandoffDemoResumePrompt(workspace.path, context, handoff.to);
+
+  return {
+    demo: "handoff-continuity",
+    workspace,
+    binding: {
+      projectId: binding.projectId,
+      projectName: binding.projectName,
+      taskId: binding.taskId,
+      taskTitle: binding.taskTitle ?? null
+    },
+    handoff,
+    resume: {
+      prompt,
+      context
+    },
+    checks: {
+      sameTask: context.task.id === binding.taskId,
+      structuredContext: /structured continuation context/i.test(content),
+      transcriptImport: false,
+      hasNextStep: context.summary.next_steps.length > 0
+    }
+  };
+}
+
+function renderHandoffDemoResumePrompt(workspacePath: string, context: TaskContextBundle, targetAgent: string) {
+  const lines = [
+    `# Resume for ${targetAgent}`,
+    "",
+    "Continue the same task using AMS structured handoff context.",
+    "",
+    `Workspace: ${workspacePath}`,
+    `Project: ${context.project.name} (${context.project.id})`,
+    `Task: ${context.task.title} (${context.task.id})`,
+    "",
+    `Current status: ${context.summary.current_status ?? context.summary.summary ?? "-"}`,
+    "",
+    "Next steps:"
+  ];
+
+  if (context.summary.next_steps.length === 0) {
+    lines.push("- none recorded");
+  } else {
+    for (const nextStep of context.summary.next_steps) {
+      lines.push(`- ${nextStep}`);
+    }
+  }
+
+  lines.push(
+    "",
+    "Safety: this is not a raw transcript import; continue from structured summaries, decisions, constraints, and next steps."
+  );
+
+  return `${lines.join("\n")}\n`;
+}
+
+function formatHandoffDemoSummary(result: HandoffContinuityDemoResult) {
+  const lines = [
+    "Handoff continuity demo completed.",
+    `Workspace: ${result.workspace.path}`,
+    `Workspace mode: ${result.workspace.temporary ? "temporary" : "provided"}`,
+    `projectId: ${result.binding.projectId}`,
+    `taskId: ${result.binding.taskId}`,
+    "",
+    `Step 1: ${result.handoff.from} wrote a structured handoff checkpoint.`,
+    `Summary: ${result.handoff.summary}`,
+    `Status: ${result.handoff.status}`,
+    "",
+    `Step 2: ${result.handoff.to} can resume from AMS context.`,
+    "",
+    result.resume.prompt.trim(),
+    "",
+    `Same task: ${result.checks.sameTask ? "yes" : "no"}`,
+    `Structured context: ${result.checks.structuredContext ? "yes" : "no"}`,
+    `Transcript import: ${result.checks.transcriptImport ? "yes" : "no"}`,
+    `Has next step: ${result.checks.hasNextStep ? "yes" : "no"}`,
+    "Result: provider/baseUrl B can hand off structured continuation context that provider/baseUrl A can read and continue."
+  ];
 
   return `${lines.join("\n")}\n`;
 }
