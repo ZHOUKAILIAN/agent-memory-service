@@ -55,6 +55,8 @@ M2 now includes a first-pass one-command demo for the Codex provider/base URL co
 export AGENT_MEMORY_BASE_URL="http://localhost:3000"
 pnpm -C apps/cli start demo codex-continuity
 pnpm -C apps/cli start demo codex-continuity --json
+pnpm -C apps/cli start demo handoff-continuity
+pnpm -C apps/cli start demo handoff-continuity --json
 ```
 
 What it does:
@@ -62,6 +64,7 @@ What it does:
 - creates a temporary workspace by default, or uses `--workspace <path>` if you provide one
 - runs `resolve` against the configured API
 - records two fake Codex locators with different provider/base URL metadata
+- for `demo handoff-continuity`, writes a provider-b handoff checkpoint and renders the provider-a resume prompt from the same task context
 - runs `doctor` and prints a human-readable continuity result or stable JSON
 - redacts fake query tokens and stores metadata only
 
@@ -125,7 +128,8 @@ Expected result:
 - `handoff create|resume`: create structured continuation context from one agent/provider and render it for the next one
 - `flush-outbox`: retry deferred sync events
 - `agent-sessions record|list`: record and inspect agent session locators
-- `demo codex-continuity`: run the M2 one-command continuity demo with human-readable or `--json` output
+- `demo codex-continuity`: run the M2 one-command locator continuity demo with human-readable or `--json` output
+- `demo handoff-continuity`: run the handoff/resume demo where provider-b writes continuation context and provider-a resumes it
 
 `doctor` is the M1 onboarding entry for checking whether continuity is already wired up in the current workspace. Use `--json` for script output.
 

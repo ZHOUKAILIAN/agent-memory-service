@@ -167,3 +167,171 @@ test("demo codex-continuity rejects pre-bound workspace", async () => {
   assert.equal(exitCode, 1);
   assert.match(writes.join(""), /Demo workspace must be empty/);
 });
+
+test("demo handoff-continuity renders a provider handoff and resume prompt", async () => {
+  const writes: string[] = [];
+  const taskCheckpoints: Array<{ taskId: string; source: string; summary: string; current_status?: string; decisions: string[]; constraints: string[]; next_steps: string[] }> = [];
+
+  const exitCode = await runCli(["demo", "handoff-continuity"], {
+    apiClient: {
+      resolveProject: async (input) => ({
+        id: "prj_handoff_demo",
+        name: input.name,
+        description: input.description,
+        repo_url: null,
+        created_at: "2026-04-11T12:00:00.000Z",
+        updated_at: "2026-04-11T12:00:00.000Z"
+      }),
+      resolveTask: async (input) => ({
+        id: "tsk_handoff_demo",
+        project_id: input.project_id,
+        title: input.title,
+        description: input.description,
+        source: input.source,
+        external_ref: input.external_ref ?? null,
+        created_at: "2026-04-11T12:00:00.000Z",
+        updated_at: "2026-04-11T12:00:00.000Z"
+      }),
+      createTaskCheckpoint: async (taskId, input) => {
+        taskCheckpoints.unshift({ taskId, ...input });
+      },
+      getTaskContext: async (taskId) => {
+        const latest = taskCheckpoints[0]!;
+        return {
+          project: {
+            id: "prj_handoff_demo",
+            name: "handoff-continuity-demo-project",
+            description: "Created by agent-memory demo",
+            repo_url: null
+          },
+          task: {
+            id: taskId,
+            project_id: "prj_handoff_demo",
+            title: "handoff-continuity-demo-task",
+            description: "Created by agent-memory demo",
+            source: "agent-memory-cli",
+            external_ref: null
+          },
+          summary: {
+            task_id: taskId,
+            summary: latest.summary,
+            current_status: latest.current_status ?? null,
+            active_decisions: latest.decisions,
+            active_constraints: latest.constraints,
+            next_steps: latest.next_steps,
+            updated_at: "2026-04-11T12:05:00.000Z"
+          },
+          checkpoints: {
+            recent: [{
+              id: "chk_handoff_demo",
+              source: latest.source,
+              summary: latest.summary,
+              current_status: latest.current_status ?? null,
+              created_at: "2026-04-11T12:05:00.000Z"
+            }]
+          },
+          generated_at: "2026-04-11T12:06:00.000Z"
+        };
+      }
+    },
+    writeStdout: (chunk) => writes.push(chunk),
+    writeStderr: (chunk) => writes.push(chunk)
+  });
+
+  const output = writes.join("");
+  assert.equal(exitCode, 0);
+  assert.match(output, /Handoff continuity demo completed\./);
+  assert.match(output, /Step 1: provider-b wrote a structured handoff checkpoint\./);
+  assert.match(output, /Step 2: provider-a rendered a resume prompt/);
+  assert.match(output, /# Continue this agent task/);
+  assert.match(output, /Provider\/base URL remains source metadata/);
+  assert.match(output, /Continue implementation from provider A/);
+  assert.match(output, /not a raw transcript import/);
+  assert.match(output, /Same project\/task: yes/);
+  assert.match(output, /Structured context only: yes/);
+});
+
+test("demo handoff-continuity --json returns stable continuation payload", async () => {
+  const tempDir = await mkdtemp(path.join(tmpdir(), "agent-memory-handoff-demo-json-"));
+  const writes: string[] = [];
+  const taskCheckpoints: Array<{ taskId: string; source: string; summary: string; current_status?: string; decisions: string[]; constraints: string[]; next_steps: string[] }> = [];
+
+  const exitCode = await runCli(["demo", "handoff-continuity", "--workspace", tempDir, "--json"], {
+    apiClient: {
+      resolveProject: async (input) => ({
+        id: "prj_handoff_json",
+        name: input.name,
+        description: input.description,
+        repo_url: null,
+        created_at: "2026-04-11T12:00:00.000Z",
+        updated_at: "2026-04-11T12:00:00.000Z"
+      }),
+      resolveTask: async (input) => ({
+        id: "tsk_handoff_json",
+        project_id: input.project_id,
+        title: input.title,
+        description: input.description,
+        source: input.source,
+        external_ref: input.external_ref ?? null,
+        created_at: "2026-04-11T12:00:00.000Z",
+        updated_at: "2026-04-11T12:00:00.000Z"
+      }),
+      createTaskCheckpoint: async (taskId, input) => {
+        taskCheckpoints.unshift({ taskId, ...input });
+      },
+      getTaskContext: async (taskId) => {
+        const latest = taskCheckpoints[0]!;
+        return {
+          project: {
+            id: "prj_handoff_json",
+            name: "handoff-continuity-demo-project",
+            description: "Created by agent-memory demo",
+            repo_url: null
+          },
+          task: {
+            id: taskId,
+            project_id: "prj_handoff_json",
+            title: "handoff-continuity-demo-task",
+            description: "Created by agent-memory demo",
+            source: "agent-memory-cli",
+            external_ref: null
+          },
+          summary: {
+            task_id: taskId,
+            summary: latest.summary,
+            current_status: latest.current_status ?? null,
+            active_decisions: latest.decisions,
+            active_constraints: latest.constraints,
+            next_steps: latest.next_steps,
+            updated_at: "2026-04-11T12:05:00.000Z"
+          },
+          checkpoints: {
+            recent: [{
+              id: "chk_handoff_json",
+              source: latest.source,
+              summary: latest.summary,
+              current_status: latest.current_status ?? null,
+              created_at: "2026-04-11T12:05:00.000Z"
+            }]
+          },
+          generated_at: "2026-04-11T12:06:00.000Z"
+        };
+      }
+    },
+    writeStdout: (chunk) => writes.push(chunk),
+    writeStderr: (chunk) => writes.push(chunk)
+  });
+
+  assert.equal(exitCode, 0);
+  const payload = JSON.parse(writes.join(""));
+  assert.equal(payload.demo, "handoff-continuity");
+  assert.equal(payload.workspace.path, tempDir);
+  assert.equal(payload.binding.projectId, "prj_handoff_json");
+  assert.equal(payload.binding.taskId, "tsk_handoff_json");
+  assert.equal(payload.handoff.from, "provider-b");
+  assert.equal(payload.handoff.to, "provider-a");
+  assert.equal(payload.resume.context.task.id, "tsk_handoff_json");
+  assert.equal(payload.checks.sameProjectTask, true);
+  assert.equal(payload.checks.structuredContextOnly, true);
+  assert.equal(payload.checks.hasSafetyBoundary, true);
+});
