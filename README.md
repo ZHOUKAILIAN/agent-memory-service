@@ -138,6 +138,7 @@ Expected result:
 
 ## Deep dive
 
+- Testing quickstart: [docs/testing-quickstart.md](docs/testing-quickstart.md)
 - FAQ: [docs/faq.md](docs/faq.md)
 - Product roadmap and acceptance: [docs/product/roadmap.md](docs/product/roadmap.md)
 - Release update template: [docs/release-update-template.md](docs/release-update-template.md)
