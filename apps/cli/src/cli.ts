@@ -24,7 +24,7 @@ doctor flags: --json for machine-readable output, --report for Markdown smoke re
 handoff: handoff create --summary <text> [--from <agent>] [--to <agent>] [--status <text>] [--decision <text>] [--constraint <text>] [--next-step <text>]
 handoff: handoff resume [--limit <n>] [--json]
 agent-sessions/demo/discover flags: --json for machine-readable output
-Demo: demo codex-continuity [--workspace <path>] [--json]
+Demo: demo <codex-continuity|handoff-continuity> [--workspace <path>] [--json]
 Discovery: discover <codex|gemini|claude|all> [--home <path>] [--codex-home <path>] [--gemini-home <path>] [--claude-home <path>] [--json] [--record <candidate-id>]
 `;
 
