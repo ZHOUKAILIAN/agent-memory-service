@@ -1,5 +1,7 @@
+import crypto from "node:crypto";
+
 import type { ApiClient, TaskContextBundle } from "../http/client.ts";
-import { getWorkspaceBinding } from "../storage/sqlite.ts";
+import { enqueueOutboxEvent, getWorkspaceBinding } from "../storage/sqlite.ts";
 
 export async function handoffCommand(
   args: Map<string, string[]>,
@@ -68,15 +70,38 @@ async function createHandoff(
     nextSteps
   });
 
-  await input.apiClient.createTaskCheckpoint(binding.taskId, {
+  const event = {
+    id: `evt_${crypto.randomUUID().replace(/-/g, "")}`,
+    taskId: binding.taskId,
     source: from,
     summary,
     content,
-    current_status: status,
+    currentStatus: status,
     decisions,
     constraints,
-    next_steps: nextSteps
-  });
+    nextSteps
+  };
+
+  let delivery: "sent" | "queued" = "sent";
+
+  try {
+    await input.apiClient.createTaskCheckpoint(binding.taskId, {
+      source: event.source,
+      summary: event.summary,
+      content: event.content,
+      current_status: event.currentStatus,
+      decisions: event.decisions,
+      constraints: event.constraints,
+      next_steps: event.nextSteps
+    });
+  } catch {
+    enqueueOutboxEvent(input.cwd, {
+      id: event.id,
+      eventType: "task-checkpoint",
+      payload: event
+    });
+    delivery = "queued";
+  }
 
   input.writeStdout(renderCreateSummary({
     workspacePath: binding.workspacePath,
@@ -89,7 +114,8 @@ async function createHandoff(
     status,
     decisions,
     constraints,
-    nextSteps
+    nextSteps,
+    delivery
   }));
   return 0;
 }
@@ -180,9 +206,10 @@ function renderCreateSummary(input: {
   decisions: string[];
   constraints: string[];
   nextSteps: string[];
+  delivery: "sent" | "queued";
 }) {
   const lines = [
-    "Handoff checkpoint created",
+    input.delivery === "sent" ? "Handoff checkpoint sent" : "Handoff checkpoint queued",
     `workspace: ${input.workspacePath}`,
     `projectId: ${input.projectId}`,
     `taskId: ${input.taskId}`,
