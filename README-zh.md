@@ -142,6 +142,7 @@ pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
 
 ## 深入阅读
 
+- 测试 quickstart：[`docs/testing-quickstart.md`](docs/testing-quickstart.md)
 - FAQ：[`docs/faq.md`](docs/faq.md)
 - 产品路线图与验收：[`docs/product/roadmap.md`](docs/product/roadmap.md)
 - Release/update 模板：[`docs/release-update-template.md`](docs/release-update-template.md)
