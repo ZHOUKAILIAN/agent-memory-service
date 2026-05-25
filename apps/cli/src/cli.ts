@@ -15,6 +15,7 @@ export type CliIo = {
   apiClient?: Partial<ApiClient>;
   cwd?: string;
   env?: NodeJS.ProcessEnv;
+  stdin?: NodeJS.ReadStream;
   writeStdout?: (chunk: string) => void;
   writeStderr?: (chunk: string) => void;
 };
@@ -101,6 +102,7 @@ export async function runCli(argv: string[], io: CliIo = {}) {
     return await baseurlCommand(flags, {
       apiClient,
       cwd,
+      stdin: io.stdin ?? process.stdin,
       writeStdout,
       writeStderr
     });

@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import readline from "node:readline/promises";
 import path from "node:path";
 
 import { sanitizeBaseUrl } from "../base-url.ts";
@@ -8,6 +9,8 @@ import { getBridgeDirectory } from "../workspace.ts";
 import { buildAgentSessionLocatorInput, saveBoundAgentSessionLocator } from "./agent-sessions.ts";
 
 const allowedAgentCli = new Set<AgentCli>(["codex", "gemini", "claude", "other"]);
+
+type PromptMode = "auto" | "yes" | "no" | "skipped";
 
 type ContinuityCache = {
   workspacePath: string;
@@ -23,6 +26,7 @@ type ContinuityCache = {
   previousBaseUrlHash: string | null;
   changed: boolean;
   preserved: boolean;
+  promptMode: PromptMode;
   continuation: {
     summary: string;
     currentStatus: string | null;
@@ -44,6 +48,7 @@ export async function baseurlCommand(
     cwd: string;
     writeStdout: (chunk: string) => void;
     writeStderr: (chunk: string) => void;
+    stdin?: NodeJS.ReadStream;
   }
 ) {
   const subcommand = args.get("_subcommand")?.[0];
@@ -63,6 +68,7 @@ async function switchBaseUrl(
     cwd: string;
     writeStdout: (chunk: string) => void;
     writeStderr: (chunk: string) => void;
+    stdin?: NodeJS.ReadStream;
   }
 ) {
   const binding = getWorkspaceBinding(input.cwd);
@@ -92,7 +98,7 @@ async function switchBaseUrl(
 
   const sanitizedBaseUrl = sanitizeBaseUrl(baseUrl);
 
-  if (!sanitizedBaseUrl) {
+  if (!sanitizedBaseUrl || !sanitizedBaseUrl.label) {
     input.writeStderr("Invalid --base-url\n");
     return 1;
   }
@@ -102,7 +108,14 @@ async function switchBaseUrl(
   const locator = args.get("locator")?.[0] ?? `${agentCli}:${sanitizedBaseUrl.hash.slice(0, 12)}`;
   const previous = findPreviousBaseUrl(input.cwd, agentCli, sanitizedBaseUrl.hash);
   const changed = Boolean(previous && previous.baseUrlHash !== sanitizedBaseUrl.hash);
-  const preserve = args.has("yes") || args.has("preserve") || !args.has("no-preserve");
+  const decision = await decidePreserve(args, {
+    changed,
+    previousBaseUrlLabel: previous?.baseUrlLabel ?? null,
+    currentBaseUrlLabel: sanitizedBaseUrl.label,
+    stdin: input.stdin,
+    writeStdout: input.writeStdout
+  });
+  const preserve = decision.preserve;
 
   const record = saveBoundAgentSessionLocator(input.cwd, {
     binding,
@@ -137,6 +150,7 @@ async function switchBaseUrl(
     previousBaseUrlHash: previous?.baseUrlHash ?? null,
     changed,
     preserved: preserve,
+    promptMode: decision.mode,
     continuation,
     safety: {
       transcriptImport: false,
@@ -147,6 +161,10 @@ async function switchBaseUrl(
 
   writeContinuityCache(input.cwd, cache);
 
+  if (!args.has("json") && !args.has("no-animation")) {
+    input.writeStdout(renderSwitchAnimation(cache));
+  }
+
   if (args.has("json")) {
     input.writeStdout(`${JSON.stringify(cache, null, 2)}\n`);
     return 0;
@@ -154,6 +172,46 @@ async function switchBaseUrl(
 
   input.writeStdout(formatSwitchSummary(cache));
   return 0;
+}
+
+async function decidePreserve(
+  args: Map<string, string[]>,
+  input: {
+    changed: boolean;
+    previousBaseUrlLabel: string | null;
+    currentBaseUrlLabel: string;
+    stdin?: NodeJS.ReadStream;
+    writeStdout: (chunk: string) => void;
+  }
+): Promise<{ preserve: boolean; mode: PromptMode }> {
+  if (args.has("yes") || args.has("preserve")) {
+    return { preserve: true, mode: "yes" };
+  }
+
+  if (args.has("no-preserve")) {
+    return { preserve: false, mode: "no" };
+  }
+
+  if (!input.changed) {
+    return { preserve: true, mode: "skipped" };
+  }
+
+  if (!input.stdin?.isTTY || !process.stdout.isTTY) {
+    return { preserve: true, mode: "auto" };
+  }
+
+  input.writeStdout(renderSwitchPrompt(input.previousBaseUrlLabel, input.currentBaseUrlLabel));
+  const rl = readline.createInterface({ input: input.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question("Keep current task context for the new baseUrl? [Y/n] ");
+    const normalized = answer.trim().toLowerCase();
+    return {
+      preserve: normalized === "" || normalized === "y" || normalized === "yes",
+      mode: "auto"
+    };
+  } finally {
+    rl.close();
+  }
 }
 
 function findPreviousBaseUrl(cwd: string, agentCli: AgentCli, newBaseUrlHash: string) {
@@ -206,6 +264,40 @@ function writeContinuityCache(cwd: string, cache: ContinuityCache) {
   writeFileSync(historyPath, `${history}${JSON.stringify(cache)}\n`, "utf8");
 }
 
+function renderSwitchPrompt(previousBaseUrlLabel: string | null, currentBaseUrlLabel: string) {
+  return [
+    "",
+    "╭────────────────────────────────────────────╮",
+    "│ ⚡ Base URL switch detected                │",
+    "╰────────────────────────────────────────────╯",
+    `from  ${previousBaseUrlLabel ?? "-"}`,
+    `to    ${currentBaseUrlLabel}`,
+    "",
+    "AMS can keep your workspace/project/task context and prepare it for the new provider/baseUrl.",
+    "Safety: structured context only; no transcript import.",
+    ""
+  ].join("\n");
+}
+
+function renderSwitchAnimation(cache: ContinuityCache) {
+  const marker = cache.changed ? "↻" : "+";
+  const preserve = cache.preserved ? "preserved" : "not preserved";
+  return [
+    "╭────────────────────────────────────────────╮",
+    `│ ${marker} AMS continuity cache                 │`,
+    "╰────────────────────────────────────────────╯",
+    `  ${cache.previousBaseUrlLabel ?? "first baseUrl"}`,
+    "          │",
+    "          ▼",
+    `  ${cache.baseUrlLabel ?? "-"}`,
+    "",
+    `  context: ${preserve}`,
+    `  task: ${cache.taskId ?? "-"}`,
+    `  next steps cached: ${cache.continuation.nextSteps.length}`,
+    ""
+  ].join("\n");
+}
+
 function formatSwitchSummary(cache: ContinuityCache) {
   const lines = [
     cache.changed ? "Base URL switch detected." : "Base URL recorded.",
@@ -218,6 +310,7 @@ function formatSwitchSummary(cache: ContinuityCache) {
     `currentBaseUrl: ${cache.baseUrlLabel ?? "-"}`,
     `changed: ${cache.changed ? "yes" : "no"}`,
     `preservedContext: ${cache.preserved ? "yes" : "no"}`,
+    `promptMode: ${cache.promptMode}`,
     `nextSteps: ${cache.continuation.nextSteps.length}`,
     "cache: .agent-memory/cache/continuation-latest.json",
     "safety: metadata/structured context only; no private transcript import"
