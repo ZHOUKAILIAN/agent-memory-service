@@ -17,9 +17,9 @@ export async function resolveWorkspaceBinding(
   }
 
   const taskTitle = args.get("name")?.[0] ?? path.basename(input.cwd);
-  const taskDescription = args.get("description")?.[0] ?? "Created by agent-memory CLI";
+  const taskDescription = args.get("description")?.[0] ?? "Created by agent-continuity CLI";
   const projectName = args.get("project-name")?.[0] ?? path.basename(input.cwd);
-  const projectDescription = args.get("project-description")?.[0] ?? "Created by agent-memory CLI";
+  const projectDescription = args.get("project-description")?.[0] ?? "Created by agent-continuity CLI";
   const repoUrl = args.get("repo-url")?.[0];
 
   const project = await input.apiClient.resolveProject({
@@ -32,7 +32,7 @@ export async function resolveWorkspaceBinding(
     project_id: project.id,
     title: taskTitle,
     description: taskDescription,
-    source: args.get("source")?.[0] ?? "agent-memory-cli",
+    source: args.get("source")?.[0] ?? "agent-continuity-cli",
     external_ref: args.get("external-ref")?.[0]
   });
 

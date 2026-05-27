@@ -1,6 +1,6 @@
 # Product roadmap and acceptance
 
-`agent-memory-service` 的正式产品语义不是“再存一份聊天记录”，而是为多 agent / 多客户端切换场景提供**项目级连续性上下文**：当用户切换 Codex provider、base URL、CLI 入口，或者未来切到 IDE / MCP 集成时，下一次运行仍能发现足够的只读上下文事实，继续同一个工程线程，而不是把它当成一段全新的会话。
+`agent-continuity-bridge` 的正式产品语义不是“再存一份聊天记录”，而是为多 agent / 多客户端切换场景提供**项目级连续性上下文**：当用户切换 Codex provider、base URL、CLI 入口，或者未来切到 IDE / MCP 集成时，下一次运行仍能发现足够的只读上下文事实，继续同一个工程线程，而不是把它当成一段全新的会话。
 
 本文档是当前仓库的正式产品路线图与验收入口。它以仓库里已经存在的 CLI、demo、技术设计和测试事实为基础，说明当前能做什么、距离完整产品还差什么、接下来按什么里程碑推进，以及每个里程碑如何做端到端验收。
 
@@ -9,7 +9,7 @@
 ### 产品定位
 
 - 对外主叙事：一个 **CLI-first continuity bridge**，帮助开发者在运行时变化后继续同一个项目/任务上下文。
-- 底层能力定位：沿用现有“shared project memory layer / project -> task 绑定”事实，但把它提升为“跨 provider、跨客户端、跨 agent 的连续性承接产品”。
+- 底层能力定位：沿用现有 `project -> task` 绑定事实，但把它收敛为“跨 provider、跨客户端、跨 agent 的连续性承接产品”。
 - 核心对象：项目级连续性上下文，而不是单一聊天会话。这个上下文至少包含 workspace 身份、project/task 绑定、结构化进展、以及外部 agent locator 的只读来源元数据。
 
 ### 产品目标
@@ -131,7 +131,7 @@
 
 **当前进展**
 
-- 已实现 `agent-memory doctor [--workspace <path>] [--json]`。
+- 已实现 `agent-continuity doctor [--workspace <path>] [--json]`。
 - 默认输出可读诊断摘要，`--json` 提供脚本稳定快照。
 - 诊断范围覆盖环境、workspace binding、最近 locator、安全边界与下一步建议。
 
@@ -153,7 +153,7 @@
 
 **当前进展**
 
-- 已实现 `agent-memory demo codex-continuity` 顶层 CLI 命令。
+- 已实现 `agent-continuity demo codex-continuity` 顶层 CLI 命令。
 - 默认自动创建临时 workspace，也支持 `--workspace <path>` 与 `--json`。
 - 命令会串联 `resolve`、写入两条 fake Codex locator、执行 `doctor`，并输出可读摘要或稳定 JSON。
 - 当前实现明确只演示 M2 产品化封装，不声称真实 Codex locator discovery。
@@ -331,14 +331,14 @@
 
 ### M4 cross-CLI metadata discovery
 
-M4 extends discovery to `agent-memory discover codex|gemini|claude` as the first cross-CLI metadata discovery path. It can scan an explicit `--home` or source-specific home flag for candidate session locators, list metadata-only candidates, and record a selected candidate with `--record <candidate-id>` after the current workspace has been resolved.
+M4 extends discovery to `agent-continuity discover codex|gemini|claude` as the first cross-CLI metadata discovery path. It can scan an explicit `--home` or source-specific home flag for candidate session locators, list metadata-only candidates, and record a selected candidate with `--record <candidate-id>` after the current workspace has been resolved.
 
 The boundary is strict: discovery may use candidate paths, file stats, and safe top-level identifiers such as session ids or sanitized base URL origins. It must not import transcript/message/content fields, must not echo token query strings, and must not upload private session content.
 
 ### M4.1 discovery UX polish
 
-M4.1 adds `agent-memory discover all`, candidate reason/source summaries, and doctor cross-CLI coverage. This turns discovery from separate commands into a product-readable diagnostic flow while preserving the metadata-only boundary.
+M4.1 adds `agent-continuity discover all`, candidate reason/source summaries, and doctor cross-CLI coverage. This turns discovery from separate commands into a product-readable diagnostic flow while preserving the metadata-only boundary.
 
 ### M4.2 smoke report
 
-M4.2 adds `agent-memory doctor --report`, a Markdown diagnostic report that summarizes workspace binding, locator coverage, recent locators, safety boundaries, and next steps. The report is intended for issues, onboarding, and release notes while preserving token/base URL sanitization.
+M4.2 adds `agent-continuity doctor --report`, a Markdown diagnostic report that summarizes workspace binding, locator coverage, recent locators, safety boundaries, and next steps. The report is intended for issues, onboarding, and release notes while preserving token/base URL sanitization.

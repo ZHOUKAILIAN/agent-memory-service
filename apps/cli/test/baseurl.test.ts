@@ -16,7 +16,7 @@ async function setupBoundWorkspace() {
       resolveProject: async () => ({
         id: "prj_123",
         name: "demo-project",
-        description: "Created by agent-memory CLI",
+        description: "Created by agent-continuity CLI",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -25,8 +25,8 @@ async function setupBoundWorkspace() {
         id: "tsk_123",
         project_id: "prj_123",
         title: "demo-task",
-        description: "Created by agent-memory CLI",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity CLI",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -56,7 +56,7 @@ test("baseurl switch records first base URL and writes continuation cache", asyn
     apiClient: {
       getTaskContext: async () => ({
         project: { id: "prj_123", name: "demo-project", description: "", repo_url: null },
-        task: { id: "tsk_123", project_id: "prj_123", title: "demo-task", description: "", source: "agent-memory-cli", external_ref: null },
+        task: { id: "tsk_123", project_id: "prj_123", title: "demo-task", description: "", source: "agent-continuity-cli", external_ref: null },
         summary: {
           task_id: "tsk_123",
           summary: "Ready",
@@ -102,7 +102,7 @@ test("baseurl switch detects changed base URL and preserves context", async () =
     cwd: tempDir,
     apiClient: { getTaskContext: async () => ({
       project: { id: "prj_123", name: "demo-project", description: "", repo_url: null },
-      task: { id: "tsk_123", project_id: "prj_123", title: "demo-task", description: "", source: "agent-memory-cli", external_ref: null },
+      task: { id: "tsk_123", project_id: "prj_123", title: "demo-task", description: "", source: "agent-continuity-cli", external_ref: null },
       summary: { task_id: "tsk_123", summary: "", current_status: null, active_decisions: [], active_constraints: [], next_steps: [], updated_at: null },
       checkpoints: { recent: [] },
       generated_at: "2026-04-11T12:00:00.000Z"
@@ -123,7 +123,7 @@ test("baseurl switch detects changed base URL and preserves context", async () =
     apiClient: {
       getTaskContext: async () => ({
         project: { id: "prj_123", name: "demo-project", description: "", repo_url: null },
-        task: { id: "tsk_123", project_id: "prj_123", title: "demo-task", description: "", source: "agent-memory-cli", external_ref: null },
+        task: { id: "tsk_123", project_id: "prj_123", title: "demo-task", description: "", source: "agent-continuity-cli", external_ref: null },
         summary: {
           task_id: "tsk_123",
           summary: "Continue from provider A",

@@ -86,7 +86,7 @@ export async function discoverCommand(
 ) {
   const target = args.get("_subcommand")?.[0];
   if (!target || !isDiscoveryMode(target)) {
-    input.writeStderr("Usage: agent-memory discover <codex|gemini|claude|all> [--home <path>] [--codex-home <path>] [--gemini-home <path>] [--claude-home <path>] [--json] [--record <candidate-id>]\n");
+    input.writeStderr("Usage: agent-continuity discover <codex|gemini|claude|all> [--home <path>] [--codex-home <path>] [--gemini-home <path>] [--claude-home <path>] [--json] [--record <candidate-id>]\n");
     return 1;
   }
 
@@ -132,7 +132,7 @@ export async function discoverCommand(
   if (recordId) {
     const binding = getWorkspaceBinding(input.cwd);
     if (!binding) {
-      input.writeStderr(`No workspace binding found. Run \`agent-memory resolve\` first before recording a discovered ${adapter.displayName} locator.\n`);
+      input.writeStderr(`No workspace binding found. Run \`agent-continuity resolve\` first before recording a discovered ${adapter.displayName} locator.\n`);
       return 1;
     }
     const candidate = candidates.find((item) => item.id === recordId);
@@ -356,7 +356,7 @@ function formatDiscovery(adapter: DiscoveryAdapter, home: string, sourceSummary:
       lines.push(`  mtime: ${candidate.modifiedAt} | size: ${candidate.sizeBytes}`);
     }
   }
-  lines.push("", `To record: agent-memory discover ${adapter.agentCli} --record <candidate-id>`);
+  lines.push("", `To record: agent-continuity discover ${adapter.agentCli} --record <candidate-id>`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -391,6 +391,6 @@ function formatAllDiscovery(groups: DiscoveryGroup[]) {
     lines.push("");
   }
 
-  lines.push("Record one candidate at a time with: agent-memory discover <codex|gemini|claude> --record <candidate-id>");
+  lines.push("Record one candidate at a time with: agent-continuity discover <codex|gemini|claude> --record <candidate-id>");
   return `${lines.join("\n")}\n`;
 }

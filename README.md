@@ -1,228 +1,168 @@
-# agent-memory-service
+# agent-continuity-bridge
 
 [中文说明](README-zh.md)
 
-`agent-memory-service` is a CLI-first memory bridge for agents that lose continuity when the runtime changes.
+`agent-continuity-bridge` is a CLI-first continuity bridge for agent work that should survive runtime changes.
 
-It is built for a specific pain: you resolve a workspace/task once, then switch Codex provider or base URL, and the next agent run looks like a different session. This project keeps those locator changes attached to the same `workspace` / `projectId` / `taskId` without reading private transcripts.
+The current product focus is narrow: bind a workspace to one `projectId` / `taskId`, then keep using that same task context after switching Codex provider, base URL, or agent CLI locator. It stores structured task checkpoints and safe locator metadata. It does not import private transcripts.
 
-## Current status
+The preferred local CLI command is `agent-continuity`. `agent-memory` remains available as a compatibility alias.
 
-Implemented today:
+## What changed
 
-- workspace/task binding through `resolve`
-- context restore through `context`
-- progress capture through `checkpoint`
-- metadata-only locator recording through `agent-sessions record|list`
-- one-command Codex provider/base URL continuity demo
-- metadata-only discovery for Codex, Gemini, and Claude candidates
-- `discover all` cross-CLI candidate grouping
-- `doctor` diagnostics, JSON output, cross-CLI coverage, and Markdown smoke reports
+This repository started as a generic agent memory service. That older direction included raw conversation ingestion, project-level memory blocks, and project-level context bundles.
 
-Not implemented yet:
+The current scope is simpler:
 
-- full transcript synchronization across CLIs
-- automatic repair of every runtime issue
-- MCP / IDE integration
-- hosted dashboard
-- SSO / enterprise permissions
+- use the workspace as the stable anchor
+- use `resolve` to bind the workspace to a project/task
+- use `checkpoint`, `context`, and `handoff` for structured task continuity
+- use `baseurl switch` and `agent-sessions` to record provider/base URL/locator changes as metadata
+- avoid reading or uploading private CLI transcripts
 
-## What problem it solves
+## Try it locally
 
-- Agent CLI sessions break continuity across restarts, machines, or tools.
-- Codex/Gemini/Claude locator discovery and Codex `provider` / `base_url` switches can make the same engineering thread look unrelated.
-- Teams need a safe bridge that tracks ownership metadata instead of copying raw conversation history.
+### 1. Install
 
-## Why metadata instead of transcripts
+```bash
+pnpm install
+```
 
-The product value here is not “store more chat”. It is “bind different agent entry points back to one workspace/task”.
+### 2. Start the API
 
-For AMS-003, the continuity flow records only locator metadata:
+The CLI continuity flow still needs the local API for project/task context.
 
-- workspace binding facts
-- project/task binding facts
-- agent CLI name and locator
-- provider label
-- sanitized base URL label/hash
+```bash
+export DATABASE_URL="postgres://postgres:postgres@localhost:5432/agent_continuity_bridge"
+pnpm -C apps/api db:migrate
+pnpm -C apps/api dev
+```
 
-It does **not** read private CLI transcripts, import real private session content, or upload transcripts.
-
-## One-command demo
-
-M2 now includes a first-pass one-command demo for the Codex provider/base URL continuity story.
+In another terminal:
 
 ```bash
 export AGENT_MEMORY_BASE_URL="http://localhost:3000"
+```
+
+### 3. Run the continuity demo
+
+```bash
 pnpm -C apps/cli start demo codex-continuity
-pnpm -C apps/cli start demo codex-continuity --json
 pnpm -C apps/cli start demo handoff-continuity
-pnpm -C apps/cli start demo handoff-continuity --json
 ```
 
-What it does:
+Expected signals:
 
-- creates a temporary workspace by default, or uses `--workspace <path>` if you provide one
-- runs `resolve` against the configured API
-- records two fake Codex locators with different provider/base URL metadata
-- for `demo handoff-continuity`, writes a provider-b handoff checkpoint and renders the provider-a resume prompt from the same task context
-- runs `doctor` and prints a human-readable continuity result or stable JSON
-- redacts fake query tokens and stores metadata only
+- two provider/base URL locators point to the same `projectId` / `taskId`
+- query tokens are redacted
+- output describes metadata/structured context only
+- no private transcript content is imported
 
-Important M2 boundary:
+Use `--json` with either demo when you want machine-readable output.
 
-- this is a productized wrapper around the existing local flow
-- the project now supports a first metadata-only cross-CLI discovery path for Codex, Gemini, and Claude, but it still does not import transcript content
-- it does not read private CLI transcripts or upload transcripts
-- if the API is not running, the demo fails early because `resolve` still depends on `AGENT_MEMORY_BASE_URL`
+## Manual base URL continuity flow
 
-Full walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
-
-## Manual demo steps
+Use a real workspace or a temporary directory:
 
 ```bash
-export AGENT_MEMORY_BASE_URL="http://localhost:3000"
-
-pnpm -C apps/cli start resolve --workspace "$PWD" --name demo-task
-
-pnpm -C apps/cli start agent-sessions record \
-  --workspace "$PWD" \
-  --agent-cli codex \
-  --locator codex-provider-a \
-  --provider provider-a \
-  --base-url 'https://api.first.example/v1?token=secret-a'
-
-pnpm -C apps/cli start agent-sessions record \
-  --workspace "$PWD" \
-  --agent-cli codex \
-  --locator codex-provider-b \
-  --provider provider-b \
-  --base-url 'https://api.second.example/v1?token=secret-b'
-
-pnpm -C apps/cli start doctor --workspace "$PWD"
-pnpm -C apps/cli start doctor --workspace "$PWD" --json
-pnpm -C apps/cli start agent-sessions list --workspace "$PWD"
-pnpm -C apps/cli start agent-sessions list --workspace "$PWD" --json
+mkdir -p /tmp/acb-demo
+cd /tmp/acb-demo
 ```
 
-Expected result:
+Resolve the workspace:
 
-- both Codex locators appear under the same workspace
-- both share the same `projectId` and `taskId`
-- default output is human-readable for demos
-- `--json` remains available for scripts
-- only sanitized metadata is shown; secrets in query strings are not echoed
+```bash
+pnpm -C /path/to/agent-continuity-bridge/apps/cli start resolve \
+  --workspace "$PWD" \
+  --name demo-task
+```
 
-## Safety promise
+Record the first provider/base URL:
 
-- metadata only
-- does not read private CLI transcripts
-- does not upload transcripts
-- does not import real private session content
+```bash
+pnpm -C /path/to/agent-continuity-bridge/apps/cli start baseurl switch \
+  --workspace "$PWD" \
+  --agent-cli codex \
+  --provider provider-a \
+  --base-url "https://api.first.example/v1?token=fake-secret-a" \
+  --yes
+```
+
+Switch to another provider/base URL:
+
+```bash
+pnpm -C /path/to/agent-continuity-bridge/apps/cli start baseurl switch \
+  --workspace "$PWD" \
+  --agent-cli codex \
+  --provider provider-b \
+  --base-url "https://api.second.example/v1?token=fake-secret-b" \
+  --yes
+```
+
+Then inspect continuity:
+
+```bash
+pnpm -C /path/to/agent-continuity-bridge/apps/cli start doctor --workspace "$PWD"
+pnpm -C /path/to/agent-continuity-bridge/apps/cli start context --workspace "$PWD"
+pnpm -C /path/to/agent-continuity-bridge/apps/cli start handoff resume --workspace "$PWD"
+```
+
+The cache is written under:
+
+```text
+.agent-memory/cache/continuation-latest.json
+.agent-memory/cache/baseurl-switches.jsonl
+```
 
 ## CLI commands
 
-- `doctor`: inspect environment, workspace binding, locator summary, safety boundary, and next steps
-- `resolve`: bind the current workspace to a project/task
-- `context`: fetch the current context bundle
-- `checkpoint`: write task progress and decisions
-- `handoff create|resume`: create structured continuation context from one agent/provider and render it for the next one
-- `baseurl switch`: record a provider/base URL change, preserve structured continuation context, and write a local cache
-- `flush-outbox`: retry deferred sync events
-- `agent-sessions record|list`: record and inspect agent session locators
-- `demo codex-continuity`: run the M2 one-command locator continuity demo with human-readable or `--json` output
-- `demo handoff-continuity`: run the handoff/resume demo where provider-b writes continuation context and provider-a resumes it
+- `agent-continuity resolve`: bind a workspace to a project/task
+- `agent-continuity checkpoint`: write task progress, decisions, constraints, and next steps
+- `agent-continuity context`: fetch the current task context bundle
+- `agent-continuity handoff create|resume`: create or render structured continuation context
+- `agent-continuity baseurl switch`: record a provider/base URL change and preserve task context
+- `agent-continuity agent-sessions record|list`: record and inspect metadata-only agent locators
+- `agent-continuity discover codex|gemini|claude|all`: scan metadata-only locator candidates
+- `agent-continuity doctor`: inspect binding, locator coverage, safety boundary, and next steps
+- `agent-continuity flush-outbox`: retry queued task checkpoint writes
+- `agent-continuity demo codex-continuity|handoff-continuity`: run local continuity demos
 
-`doctor` is the M1 onboarding entry for checking whether continuity is already wired up in the current workspace. Use `--json` for script output.
+## Current safety boundary
 
-`agent-sessions` now defaults to product-readable terminal output. Use `--json` when you need a stable machine-readable contract.
-
-## Deep dive
-
-- Testing quickstart: [docs/testing-quickstart.md](docs/testing-quickstart.md)
-- FAQ: [docs/faq.md](docs/faq.md)
-- Product roadmap and acceptance: [docs/product/roadmap.md](docs/product/roadmap.md)
-- Release update template: [docs/release-update-template.md](docs/release-update-template.md)
-- Integration guide for agent tool authors: [docs/integrations/agent-tool-authors.md](docs/integrations/agent-tool-authors.md)
-- Technical design: [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md)
-- Demo script: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
-- Demo capture guide: [docs/demo/capture-guide.md](docs/demo/capture-guide.md)
+- stores workspace/project/task identity
+- stores provider/base URL/locator as sanitized metadata
+- stores structured task checkpoints and handoff context
+- does not read private CLI transcripts
+- does not upload private session content
+- does not echo query-string tokens
 
 ## Repository layout
 
 ```text
 .
 ├── apps
-│   ├── cli
-│   └── api
+│   ├── api
+│   └── cli
 ├── docs
 ├── README.md
 ├── README-zh.md
 └── package.json
 ```
 
-## Local development
-
-### Requirements
-
-- Node.js 22+
-- pnpm 10+
-- PostgreSQL
-- `psql` available in your shell for migrations
-
-### Start the API
-
-```bash
-pnpm install
-export DATABASE_URL="postgres://postgres:postgres@localhost:5432/project_memory_service"
-pnpm -C apps/api db:migrate
-pnpm -C apps/api dev
-```
-
-### Useful commands
+## Development
 
 ```bash
 pnpm -C apps/cli test
 pnpm -C apps/cli test:e2e
 pnpm -C apps/api test
-pnpm -C apps/api typecheck
+pnpm typecheck
 ```
 
-### Use the `agent-memory` binary locally
+## More docs
 
-The CLI package exposes an `agent-memory` binary for the commands used in the docs. From a local checkout, link it with:
-
-```bash
-pnpm install
-cd apps/cli
-pnpm link --global
-agent-memory help
-```
-
-If your pnpm global bin directory is not configured yet, set `PNPM_HOME` / `global-bin-dir` first according to your local pnpm setup.
-
-If you do not want a global link, keep using the workspace form:
-
-```bash
-pnpm -C apps/cli start doctor --workspace "$PWD"
-```
-
-### Discover multi-CLI locator metadata
-
-After the demo, try the first real metadata discovery path:
-
-```bash
-agent-memory discover codex --home ~/.codex
-agent-memory discover gemini --gemini-home ~/.gemini
-agent-memory discover claude --claude-home ~/.claude
-agent-memory discover codex --codex-home ~/.codex --record codex-1
-```
-
-M4 discovery is metadata-only across Codex, Gemini, and Claude: it uses candidate paths, file stats, and safe top-level identifiers. It does not import transcript/message/content/token/query fields and does not upload private session content.
-
-### Cross-CLI discovery polish
-
-`agent-memory discover all` scans Codex, Gemini, and Claude homes in one pass and groups metadata-only candidates by CLI. `agent-memory doctor` also reports cross-CLI coverage so you can see which agents already have locators attached to the current workspace/task.
-
-### Share a smoke report
-
-Use `agent-memory doctor --report` to generate a Markdown smoke report with binding status, cross-CLI coverage, recent locators, safety boundaries, and next steps. It is designed to be pasted into issues, release notes, or onboarding docs without leaking token query strings.
+- Testing quickstart: [docs/testing-quickstart.md](docs/testing-quickstart.md)
+- FAQ: [docs/faq.md](docs/faq.md)
+- Product roadmap: [docs/product/roadmap.md](docs/product/roadmap.md)
+- Technical design: [docs/technical-design/agent-cli-session-memory-discovery.md](docs/technical-design/agent-cli-session-memory-discovery.md)
+- Demo walkthrough: [docs/demo/codex-base-url-continuity.md](docs/demo/codex-base-url-continuity.md)
+- Integration guide: [docs/integrations/agent-tool-authors.md](docs/integrations/agent-tool-authors.md)

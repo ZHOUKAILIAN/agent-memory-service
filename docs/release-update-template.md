@@ -9,7 +9,7 @@ Use this template for GitHub releases, milestone updates, PR descriptions that a
 
 <One sentence: what continuity problem does this release make easier?>
 
-Example: `agent-memory-service now gives a shareable doctor report for checking whether a workspace has cross-CLI continuity coverage.`
+Example: `agent-continuity-bridge now gives a shareable doctor report for checking whether a workspace has cross-CLI continuity coverage.`
 
 ## What changed
 
@@ -76,7 +76,7 @@ pnpm typecheck
 
 ## Links
 
-- README: https://github.com/ZHOUKAILIAN/agent-memory-service
+- README: https://github.com/ZHOUKAILIAN/agent-continuity-bridge
 - FAQ: docs/faq.md
 - Roadmap: docs/product/roadmap.md
 - Demo walkthrough: docs/demo/codex-base-url-continuity.md

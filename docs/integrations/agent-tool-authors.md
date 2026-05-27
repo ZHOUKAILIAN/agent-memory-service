@@ -1,6 +1,6 @@
 # Integration guide for agent tool authors
 
-This guide explains how an agent CLI, IDE plugin, MCP server, or automation script should integrate with `agent-memory-service` without creating a second identity system or importing private transcripts.
+This guide explains how an agent CLI, IDE plugin, MCP server, or automation script should integrate with `agent-continuity-bridge` without creating a second identity system or importing private transcripts.
 
 The short version:
 

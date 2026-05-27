@@ -15,7 +15,7 @@ async function setupBoundWorkspace() {
       resolveProject: async () => ({
         id: "prj_123",
         name: "demo-project",
-        description: "Created by agent-memory CLI",
+        description: "Created by agent-continuity CLI",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -24,8 +24,8 @@ async function setupBoundWorkspace() {
         id: "tsk_123",
         project_id: "prj_123",
         title: "demo-task",
-        description: "Created by agent-memory CLI",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity CLI",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -126,7 +126,7 @@ test("doctor --report returns a Markdown smoke report", async () => {
 
   assert.equal(exitCode, 0);
   const output = writes.join("");
-  assert.match(output, /# agent-memory doctor report/);
+  assert.match(output, /# agent-continuity doctor report/);
   assert.match(output, /## Summary/);
   assert.match(output, /## Coverage by CLI/);
   assert.match(output, /\| codex \| 1 \|/);

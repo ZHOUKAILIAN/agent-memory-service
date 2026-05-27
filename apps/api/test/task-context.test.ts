@@ -18,7 +18,7 @@ describe("GET /tasks/:id/context", () => {
       project_id: "prj_123",
       title: "Validate callback URL",
       description: "Task description",
-      source: "agent-memory-cli",
+      source: "agent-continuity-cli",
       external_ref: null,
       created_at: "2026-04-11T01:10:00.000Z",
       updated_at: "2026-04-11T01:10:00.000Z"
@@ -38,7 +38,7 @@ describe("GET /tasks/:id/context", () => {
       {
         id: "tcp_123",
         task_id: "tsk_123",
-        source: "agent-memory-cli",
+        source: "agent-continuity-cli",
         summary: "Validated callback URL on server",
         content: "Summary: Validated callback URL on server",
         current_status: "in_progress",

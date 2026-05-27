@@ -22,7 +22,7 @@ export async function handoffCommand(
     return await resumeHandoff(args, input);
   }
 
-  input.writeStderr("Usage: agent-memory handoff <create|resume> [flags]\n");
+  input.writeStderr("Usage: agent-continuity handoff <create|resume> [flags]\n");
   return 1;
 }
 
@@ -38,12 +38,12 @@ async function createHandoff(
   const binding = getWorkspaceBinding(input.cwd);
 
   if (!binding) {
-    input.writeStderr("No workspace binding found. Run `agent-memory resolve` first.\n");
+    input.writeStderr("No workspace binding found. Run `agent-continuity resolve` first.\n");
     return 1;
   }
 
   if (!binding.taskId) {
-    input.writeStderr("No task binding found. Run `agent-memory resolve --name <task>` first.\n");
+    input.writeStderr("No task binding found. Run `agent-continuity resolve --name <task>` first.\n");
     return 1;
   }
 
@@ -54,7 +54,7 @@ async function createHandoff(
     return 1;
   }
 
-  const from = args.get("from")?.[0] ?? args.get("source")?.[0] ?? "agent-memory-handoff";
+  const from = args.get("from")?.[0] ?? args.get("source")?.[0] ?? "agent-continuity-handoff";
   const to = args.get("to")?.[0];
   const status = args.get("status")?.[0];
   const decisions = args.get("decision") ?? [];
@@ -132,12 +132,12 @@ async function resumeHandoff(
   const binding = getWorkspaceBinding(input.cwd);
 
   if (!binding) {
-    input.writeStderr("No workspace binding found. Run `agent-memory resolve` first.\n");
+    input.writeStderr("No workspace binding found. Run `agent-continuity resolve` first.\n");
     return 1;
   }
 
   if (!binding.taskId) {
-    input.writeStderr("No task binding found. Run `agent-memory resolve --name <task>` first.\n");
+    input.writeStderr("No task binding found. Run `agent-continuity resolve --name <task>` first.\n");
     return 1;
   }
 
