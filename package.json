@@ -1,5 +1,5 @@
 {
-  "name": "agent-memory-service",
+  "name": "agent-continuity-bridge",
   "private": true,
   "packageManager": "pnpm@10.32.1",
   "scripts": {

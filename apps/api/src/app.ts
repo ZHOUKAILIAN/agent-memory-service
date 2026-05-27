@@ -1,12 +1,6 @@
 import Fastify from "fastify";
 import { ZodError } from "zod";
 
-import {
-  createUnavailableConversationRepository,
-  type ConversationRepository
-} from "./modules/conversations/conversation-repository.js";
-import { contextService, type ContextService } from "./modules/context/context-service.js";
-import { createUnavailableMemoryRepository, type MemoryRepository } from "./modules/memory/memory-repository.js";
 import { createUnavailableProjectRepository, type ProjectRepository } from "./modules/projects/project-repository.js";
 import {
   createUnavailableTaskCheckpointRepository,
@@ -22,9 +16,6 @@ import { registerProjectRoutes } from "./routes/projects.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 
 export type AppDependencies = {
-  conversationRepository: ConversationRepository;
-  contextService: ContextService;
-  memoryRepository: MemoryRepository;
   projectRepository: ProjectRepository;
   taskCheckpointRepository: TaskCheckpointRepository;
   taskRepository: TaskRepository;
@@ -34,10 +25,6 @@ export type AppDependencies = {
 export function buildApp(overrides: Partial<AppDependencies> = {}) {
   const app = Fastify();
   const dependencies: AppDependencies = {
-    conversationRepository:
-      overrides.conversationRepository ?? createUnavailableConversationRepository(),
-    contextService: overrides.contextService ?? contextService,
-    memoryRepository: overrides.memoryRepository ?? createUnavailableMemoryRepository(),
     projectRepository: overrides.projectRepository ?? createUnavailableProjectRepository(),
     taskCheckpointRepository:
       overrides.taskCheckpointRepository ?? createUnavailableTaskCheckpointRepository(),

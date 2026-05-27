@@ -1,6 +1,6 @@
 # Demo capture guide
 
-Use this guide to produce screenshots, terminal recordings, short videos, or launch-post snippets for `agent-memory-service` without leaking private data or overstating current capabilities.
+Use this guide to produce screenshots, terminal recordings, short videos, or launch-post snippets for `agent-continuity-bridge` without leaking private data or overstating current capabilities.
 
 The best M6 demo asset is not a long architecture tour. It is a tight continuity story:
 
@@ -45,7 +45,7 @@ Expected repository state before capture:
 If the API is required for the demo, start it separately and do not show secrets in the recording.
 
 ```bash
-export DATABASE_URL="postgres://postgres:postgres@localhost:5432/project_memory_service"
+export DATABASE_URL="postgres://postgres:postgres@localhost:5432/agent_continuity_bridge"
 pnpm -C apps/api db:migrate
 pnpm -C apps/api dev
 ```
@@ -150,7 +150,7 @@ Before publishing, inspect every frame or screenshot:
 ```text
 Agents often lose continuity when you switch provider, base URL, or CLI entry point.
 
-agent-memory-service keeps continuity attached to the workspace/project/task instead of the provider path.
+agent-continuity-bridge keeps continuity attached to the workspace/project/task instead of the provider path.
 
 Here, the demo records two Codex locators with different provider/base URL metadata.
 

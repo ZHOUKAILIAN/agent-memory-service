@@ -1,9 +1,8 @@
 import type { ApiClient } from "../http/client.ts";
 import { deleteOutboxEvent, listOutboxEvents } from "../storage/sqlite.ts";
 
-import { sendCheckpointEvent, sendTaskCheckpointEvent } from "./checkpoint.ts";
+import { sendTaskCheckpointEvent } from "./checkpoint.ts";
 
-type ProjectCheckpointEvent = Parameters<typeof sendCheckpointEvent>[0];
 type TaskCheckpointEvent = Parameters<typeof sendTaskCheckpointEvent>[0];
 
 export async function flushOutboxCommand(
@@ -15,22 +14,21 @@ export async function flushOutboxCommand(
     writeStderr: (chunk: string) => void;
   }
 ) {
-  const events = listOutboxEvents<ProjectCheckpointEvent | TaskCheckpointEvent>(input.cwd);
+  const events = listOutboxEvents<TaskCheckpointEvent>(input.cwd);
   let flushedCount = 0;
   let failedCount = 0;
 
   for (const event of events) {
     try {
-      if (event.eventType === "checkpoint") {
-        await sendCheckpointEvent(event.payload as ProjectCheckpointEvent, input.apiClient);
-      }
-
       if (event.eventType === "task-checkpoint") {
-        await sendTaskCheckpointEvent(event.payload as TaskCheckpointEvent, input.apiClient);
+        await sendTaskCheckpointEvent(event.payload, input.apiClient);
+        deleteOutboxEvent(input.cwd, event.id);
+        flushedCount += 1;
+        continue;
       }
 
-      deleteOutboxEvent(input.cwd, event.id);
-      flushedCount += 1;
+      input.writeStderr(`Unsupported outbox event type: ${event.eventType}\n`);
+      failedCount += 1;
     } catch {
       failedCount += 1;
     }

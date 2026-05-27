@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import { runCli } from "../src/cli.ts";
+import { saveWorkspaceBinding } from "../src/storage/sqlite.ts";
 
 async function setupBoundWorkspace() {
   const tempDir = await mkdtemp(path.join(tmpdir(), "agent-memory-"));
@@ -16,7 +17,7 @@ async function setupBoundWorkspace() {
       resolveProject: async () => ({
         id: "prj_123",
         name: "demo-project",
-        description: "Created by agent-memory CLI",
+        description: "Created by agent-continuity CLI",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -25,8 +26,8 @@ async function setupBoundWorkspace() {
         id: "tsk_123",
         project_id: "prj_123",
         title: "demo-task",
-        description: "Created by agent-memory CLI",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity CLI",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -47,7 +48,7 @@ function countOutboxEvents(cwd: string) {
   return row.count;
 }
 
-test("checkpoint writes memory blocks first and conversation last", async () => {
+test("checkpoint writes task progress to the bound task", async () => {
   const tempDir = await setupBoundWorkspace();
   const checkpoints: Array<{ taskId: string; summary: string; current_status?: string }> = [];
 
@@ -120,4 +121,29 @@ test("checkpoint queues an outbox event when sending fails and flush-outbox retr
   assert.equal(flushedExitCode, 0);
   assert.equal(countOutboxEvents(tempDir), 0);
   assert.match(calls[calls.length - 1] ?? "", /tsk_123:checkpoint:Validated callback URL on server/);
+});
+
+test("checkpoint rejects legacy project-only bindings", async () => {
+  const tempDir = await mkdtemp(path.join(tmpdir(), "agent-memory-legacy-"));
+  const writes: string[] = [];
+
+  saveWorkspaceBinding(tempDir, {
+    projectId: "prj_123",
+    projectName: "demo-project"
+  });
+
+  const exitCode = await runCli(
+    ["checkpoint", "--summary", "Validated callback URL on server"],
+    {
+      cwd: tempDir,
+      apiClient: {
+        createTaskCheckpoint: async () => {}
+      },
+      writeStdout: (chunk) => writes.push(chunk),
+      writeStderr: (chunk) => writes.push(chunk)
+    }
+  );
+
+  assert.equal(exitCode, 1);
+  assert.match(writes.join(""), /No task binding found/);
 });

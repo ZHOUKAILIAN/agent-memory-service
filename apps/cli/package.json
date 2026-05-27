@@ -1,9 +1,10 @@
 {
-  "name": "@agent-memory-service/cli",
+  "name": "@agent-continuity-bridge/cli",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
+    "agent-continuity": "src/index.ts",
     "agent-memory": "src/index.ts"
   },
   "scripts": {

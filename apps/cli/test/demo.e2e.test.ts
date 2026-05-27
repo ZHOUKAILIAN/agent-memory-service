@@ -14,7 +14,7 @@ test("demo codex-continuity records two sanitized locators on one binding", asyn
       resolveProject: async () => ({
         id: "prj_demo",
         name: "demo-project",
-        description: "Created by agent-memory demo",
+        description: "Created by agent-continuity demo",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -23,8 +23,8 @@ test("demo codex-continuity records two sanitized locators on one binding", asyn
         id: "tsk_demo",
         project_id: "prj_demo",
         title: "demo-task",
-        description: "Created by agent-memory demo",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity demo",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -64,7 +64,7 @@ test("demo codex-continuity --json returns stable sanitized payload", async () =
       resolveProject: async () => ({
         id: "prj_demo_json",
         name: "demo-project-json",
-        description: "Created by agent-memory demo",
+        description: "Created by agent-continuity demo",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -73,8 +73,8 @@ test("demo codex-continuity --json returns stable sanitized payload", async () =
         id: "tsk_demo_json",
         project_id: "prj_demo_json",
         title: "demo-task-json",
-        description: "Created by agent-memory demo",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity demo",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -130,7 +130,7 @@ test("demo codex-continuity rejects pre-bound workspace", async () => {
       resolveProject: async () => ({
         id: "prj_existing",
         name: "demo-project",
-        description: "Created by agent-memory CLI",
+        description: "Created by agent-continuity CLI",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -139,8 +139,8 @@ test("demo codex-continuity rejects pre-bound workspace", async () => {
         id: "tsk_existing",
         project_id: "prj_existing",
         title: "demo-task",
-        description: "Created by agent-memory CLI",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity CLI",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -201,15 +201,15 @@ test("demo handoff-continuity renders a provider handoff and resume prompt", asy
           project: {
             id: "prj_handoff_demo",
             name: "handoff-continuity-demo-project",
-            description: "Created by agent-memory demo",
+            description: "Created by agent-continuity demo",
             repo_url: null
           },
           task: {
             id: taskId,
             project_id: "prj_handoff_demo",
             title: "handoff-continuity-demo-task",
-            description: "Created by agent-memory demo",
-            source: "agent-memory-cli",
+            description: "Created by agent-continuity demo",
+            source: "agent-continuity-cli",
             external_ref: null
           },
           summary: {
@@ -252,7 +252,7 @@ test("demo handoff-continuity renders a provider handoff and resume prompt", asy
 });
 
 test("demo handoff-continuity --json returns stable continuation payload", async () => {
-  const tempDir = await mkdtemp(path.join(tmpdir(), "agent-memory-handoff-demo-json-"));
+  const tempDir = await mkdtemp(path.join(tmpdir(), "agent-continuity-handoff-demo-json-"));
   const writes: string[] = [];
   const taskCheckpoints: Array<{ taskId: string; source: string; summary: string; current_status?: string; decisions: string[]; constraints: string[]; next_steps: string[] }> = [];
 
@@ -285,15 +285,15 @@ test("demo handoff-continuity --json returns stable continuation payload", async
           project: {
             id: "prj_handoff_json",
             name: "handoff-continuity-demo-project",
-            description: "Created by agent-memory demo",
+            description: "Created by agent-continuity demo",
             repo_url: null
           },
           task: {
             id: taskId,
             project_id: "prj_handoff_json",
             title: "handoff-continuity-demo-task",
-            description: "Created by agent-memory demo",
-            source: "agent-memory-cli",
+            description: "Created by agent-continuity demo",
+            source: "agent-continuity-cli",
             external_ref: null
           },
           summary: {

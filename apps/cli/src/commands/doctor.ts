@@ -205,7 +205,7 @@ export function formatDoctorReport(snapshot: DoctorSnapshot) {
     )).join("\n") + "\n";
   const nextSteps = snapshot.nextSteps.map((step) => `- ${step}`).join("\n");
 
-  return `# agent-memory doctor report\n\n` +
+  return `# agent-continuity doctor report\n\n` +
     `## Summary\n\n` +
     `- Workspace: \`${escapeMarkdown(snapshot.workspace)}\`\n` +
     `- Bridge DB: ${snapshot.environment.bridgeExists ? "present" : "missing"}\n` +

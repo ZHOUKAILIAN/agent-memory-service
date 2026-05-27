@@ -1,10 +1,10 @@
 # FAQ
 
-This FAQ explains what `agent-memory-service` is today, what it is not, and why the project is intentionally metadata-first.
+This FAQ explains what `agent-continuity-bridge` is today, what it is not, and why the project is intentionally metadata-first.
 
-## What is agent-memory-service?
+## What is agent-continuity-bridge?
 
-`agent-memory-service` is a CLI-first continuity bridge for engineering agents. It helps a workspace keep the same `projectId` / `taskId` identity when the agent entry point changes, such as switching Codex provider/base URL or moving between supported CLI sources.
+`agent-continuity-bridge` is a CLI-first continuity bridge for engineering agents. It helps a workspace keep the same `projectId` / `taskId` identity when the agent entry point changes, such as switching Codex provider/base URL or moving between supported CLI sources.
 
 The current product story is continuity across runtime changes, not unlimited chat history storage.
 

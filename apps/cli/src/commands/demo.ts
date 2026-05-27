@@ -110,7 +110,7 @@ export async function demoCommand(
   const subcommand = args.get("_subcommand")?.[0];
 
   if (subcommand !== "codex-continuity" && subcommand !== "handoff-continuity") {
-    input.writeStderr("Usage: agent-memory demo <codex-continuity|handoff-continuity> [--workspace <path>] [--json]\n");
+    input.writeStderr("Usage: agent-continuity demo <codex-continuity|handoff-continuity> [--workspace <path>] [--json]\n");
     return 1;
   }
 
@@ -272,8 +272,8 @@ async function resolveDemoBinding(
   const resolveArgs = new Map<string, string[]>([
     ["name", [args.get("name")?.[0] ?? `${demoName}-demo-task`]],
     ["project-name", [args.get("project-name")?.[0] ?? `${demoName}-demo-project`]],
-    ["description", [args.get("description")?.[0] ?? "Created by agent-memory demo"]],
-    ["project-description", [args.get("project-description")?.[0] ?? "Created by agent-memory demo"]]
+    ["description", [args.get("description")?.[0] ?? "Created by agent-continuity demo"]],
+    ["project-description", [args.get("project-description")?.[0] ?? "Created by agent-continuity demo"]]
   ]);
 
   return await resolveWorkspaceBinding(resolveArgs, {

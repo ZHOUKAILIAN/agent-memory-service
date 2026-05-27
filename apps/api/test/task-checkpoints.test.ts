@@ -7,7 +7,7 @@ describe("POST /tasks/:id/checkpoints", () => {
     const createCheckpoint = vi.fn().mockResolvedValue({
       id: "tcp_123",
       task_id: "tsk_123",
-      source: "agent-memory-cli",
+      source: "agent-continuity-cli",
       summary: "Validated callback URL on server",
       content: "Summary: Validated callback URL on server",
       current_status: "in_progress",
@@ -42,7 +42,7 @@ describe("POST /tasks/:id/checkpoints", () => {
       method: "POST",
       url: "/tasks/tsk_123/checkpoints",
       payload: {
-        source: "agent-memory-cli",
+        source: "agent-continuity-cli",
         summary: "Validated callback URL on server",
         current_status: "in_progress",
         decisions: ["Only trust server-side callback validation"],

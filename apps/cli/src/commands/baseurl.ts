@@ -54,7 +54,7 @@ export async function baseurlCommand(
   const subcommand = args.get("_subcommand")?.[0];
 
   if (subcommand !== "switch") {
-    input.writeStderr("Usage: agent-memory baseurl switch --agent-cli <codex|gemini|claude|other> --base-url <url> [--provider <label>] [--locator <id>] [--yes] [--json]\n");
+    input.writeStderr("Usage: agent-continuity baseurl switch --agent-cli <codex|gemini|claude|other> --base-url <url> [--provider <label>] [--locator <id>] [--yes] [--json]\n");
     return 1;
   }
 
@@ -74,7 +74,7 @@ async function switchBaseUrl(
   const binding = getWorkspaceBinding(input.cwd);
 
   if (!binding) {
-    input.writeStderr("No workspace binding found. Run `agent-memory resolve` first.\n");
+    input.writeStderr("No workspace binding found. Run `agent-continuity resolve` first.\n");
     return 1;
   }
 
@@ -317,7 +317,7 @@ function formatSwitchSummary(cache: ContinuityCache) {
   ];
 
   if (cache.changed && cache.preserved) {
-    lines.push("resume: run `agent-memory handoff resume` or feed the cached continuation context to the next provider/baseUrl.");
+    lines.push("resume: run `agent-continuity handoff resume` or feed the cached continuation context to the next provider/baseUrl.");
   }
 
   return `${lines.join("\n")}\n`;

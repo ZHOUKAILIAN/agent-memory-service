@@ -1,6 +1,6 @@
 # Codex base URL / provider continuity demo
 
-这个 demo 展示：同一个 workspace/task 下，即使 Codex 切换了 provider 或 base URL，`agent-memory-service` 仍然只记录安全的 locator metadata，并把它们绑定回同一个 `projectId` / `taskId`。
+这个 demo 展示：同一个 workspace/task 下，即使 Codex 切换了 provider 或 base URL，`agent-continuity-bridge` 仍然只记录安全的 locator metadata，并把它们绑定回同一个 `projectId` / `taskId`。
 
 M2 当前首推入口已经升级为一键 demo：`demo codex-continuity`。它是对现有本地能力的产品化编排，不是 M3 的真实 locator discovery。
 

@@ -18,17 +18,17 @@ pnpm --version
 ## Install from GitHub source
 
 ```bash
-git clone https://github.com/ZHOUKAILIAN/agent-memory-service.git
-cd agent-memory-service
+git clone https://github.com/ZHOUKAILIAN/agent-continuity-bridge.git
+cd agent-continuity-bridge
 pnpm install
 ```
 
-Optional: expose the local `agent-memory` binary globally.
+Optional: expose the local `agent-continuity` binary globally. The older `agent-memory` command is still available as an alias.
 
 ```bash
 cd apps/cli
 pnpm link --global
-agent-memory help
+agent-continuity help
 cd ../..
 ```
 
@@ -48,7 +48,7 @@ The CLI `resolve`, `context`, `handoff`, and `baseurl switch` flows need the API
 Set up Postgres according to your local environment, then export `DATABASE_URL`:
 
 ```bash
-export DATABASE_URL="postgres://postgres:postgres@localhost:5432/project_memory_service"
+export DATABASE_URL="postgres://postgres:postgres@localhost:5432/agent_continuity_bridge"
 pnpm -C apps/api db:migrate
 pnpm -C apps/api dev
 ```
@@ -80,22 +80,22 @@ Expected signs of success:
 Use a real workspace/repo you are comfortable testing in, or create a temporary directory.
 
 ```bash
-mkdir -p /tmp/ams-test-workspace
-cd /tmp/ams-test-workspace
+mkdir -p /tmp/acb-test-workspace
+cd /tmp/acb-test-workspace
 ```
 
 Resolve the workspace to a task:
 
 ```bash
-agent-memory resolve --name ams-test-task
+agent-continuity resolve --name acb-test-task
 # or without global link:
-# pnpm -C /path/to/agent-memory-service/apps/cli start resolve --workspace "$PWD" --name ams-test-task
+# pnpm -C /path/to/agent-continuity-bridge/apps/cli start resolve --workspace "$PWD" --name acb-test-task
 ```
 
 Record the first base URL:
 
 ```bash
-agent-memory baseurl switch \
+agent-continuity baseurl switch \
   --agent-cli codex \
   --provider provider-a \
   --base-url "https://api.first.example/v1?token=fake-secret-a" \
@@ -105,7 +105,7 @@ agent-memory baseurl switch \
 Switch to another base URL:
 
 ```bash
-agent-memory baseurl switch \
+agent-continuity baseurl switch \
   --agent-cli codex \
   --provider provider-b \
   --base-url "https://api.second.example/v1?token=fake-secret-b" \
@@ -133,9 +133,9 @@ The cache should include project/task identity and structured continuation field
 ## Try handoff resume
 
 ```bash
-agent-memory handoff resume
+agent-continuity handoff resume
 # or:
-# pnpm -C /path/to/agent-memory-service/apps/cli start handoff resume --workspace "$PWD"
+# pnpm -C /path/to/agent-continuity-bridge/apps/cli start handoff resume --workspace "$PWD"
 ```
 
 This renders a continuation prompt for the current workspace/task.
@@ -153,7 +153,7 @@ This preview is intentionally metadata/structured-context first:
 
 ## Cleanup
 
-For a test workspace, remove local AMS state with:
+For a test workspace, remove local continuity bridge state with:
 
 ```bash
 rm -rf .agent-memory

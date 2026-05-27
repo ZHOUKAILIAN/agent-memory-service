@@ -15,7 +15,7 @@ test("doctor reports one bound task with two codex locators and no leaked token"
       resolveProject: async () => ({
         id: "prj_demo",
         name: "demo-project",
-        description: "Created by agent-memory CLI",
+        description: "Created by agent-continuity CLI",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -24,8 +24,8 @@ test("doctor reports one bound task with two codex locators and no leaked token"
         id: "tsk_demo",
         project_id: "prj_demo",
         title: "demo-task",
-        description: "Created by agent-memory CLI",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity CLI",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -127,8 +127,8 @@ test("doctor reports cross CLI coverage for codex gemini and claude locators", a
   await runCli(["resolve", "--name", "coverage-task"], {
     cwd: tempDir,
     apiClient: {
-      resolveProject: async () => ({ id: "prj_cov", name: "coverage-project", description: "Created by agent-memory CLI", repo_url: null, created_at: "2026-04-11T12:00:00.000Z", updated_at: "2026-04-11T12:00:00.000Z" }),
-      resolveTask: async () => ({ id: "tsk_cov", project_id: "prj_cov", title: "coverage-task", description: "Created by agent-memory CLI", source: "agent-memory-cli", external_ref: null, created_at: "2026-04-11T12:00:00.000Z", updated_at: "2026-04-11T12:00:00.000Z" })
+      resolveProject: async () => ({ id: "prj_cov", name: "coverage-project", description: "Created by agent-continuity CLI", repo_url: null, created_at: "2026-04-11T12:00:00.000Z", updated_at: "2026-04-11T12:00:00.000Z" }),
+      resolveTask: async () => ({ id: "tsk_cov", project_id: "prj_cov", title: "coverage-task", description: "Created by agent-continuity CLI", source: "agent-continuity-cli", external_ref: null, created_at: "2026-04-11T12:00:00.000Z", updated_at: "2026-04-11T12:00:00.000Z" })
     },
     writeStdout: () => {}
   });

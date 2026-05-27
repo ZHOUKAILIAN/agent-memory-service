@@ -17,7 +17,7 @@ async function setupBoundWorkspace() {
       resolveProject: async () => ({
         id: "prj_123",
         name: "demo-project",
-        description: "Created by agent-memory CLI",
+        description: "Created by agent-continuity CLI",
         repo_url: "https://github.com/example/demo.git",
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -26,8 +26,8 @@ async function setupBoundWorkspace() {
         id: "tsk_123",
         project_id: "prj_123",
         title: "demo-task",
-        description: "Created by agent-memory CLI",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity CLI",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -53,15 +53,15 @@ function taskContext(): TaskContextBundle {
     project: {
       id: "prj_123",
       name: "demo-project",
-      description: "Created by agent-memory CLI",
+      description: "Created by agent-continuity CLI",
       repo_url: "https://github.com/example/demo.git"
     },
     task: {
       id: "tsk_123",
       project_id: "prj_123",
       title: "demo-task",
-      description: "Created by agent-memory CLI",
-      source: "agent-memory-cli",
+      description: "Created by agent-continuity CLI",
+      source: "agent-continuity-cli",
       external_ref: null
     },
     summary: {

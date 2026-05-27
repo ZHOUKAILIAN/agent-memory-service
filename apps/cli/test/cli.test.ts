@@ -24,10 +24,11 @@ test("runCli prints available commands for help", async () => {
   assert.match(writes.join(""), /baseurl switch/);
 });
 
-test("package exposes the documented agent-memory binary", () => {
+test("package exposes the documented continuity binary and legacy alias", () => {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 
   assert.deepEqual(packageJson.bin, {
+    "agent-continuity": "src/index.ts",
     "agent-memory": "src/index.ts"
   });
 });

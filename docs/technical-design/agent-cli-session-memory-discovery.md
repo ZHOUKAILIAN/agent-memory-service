@@ -2,7 +2,7 @@
 
 ## 1. 背景与问题陈述
 
-`agent-memory-service` 已经通过 CLI-first 工作流把当前工作区与 `.agent-memory/bridge.sqlite` 绑定起来，并在本地 `workspace_bindings` 中保存 `project_id`、`task_id`、`repo_url` 等事实。这套机制已经能支撑同一工作区内的上下文恢复，但当用户在同一工程中切换不同 Agent CLI，或在 Codex CLI 中切换 base URL/provider 时，外部 CLI 自带的会话目录、账户目录和本地布局往往发生变化，导致用户误以为“原来的上下文消失了”。
+`agent-continuity-bridge` 已经通过 CLI-first 工作流把当前工作区与 `.agent-memory/bridge.sqlite` 绑定起来，并在本地 `workspace_bindings` 中保存 `project_id`、`task_id`、`repo_url` 等事实。这套机制已经能支撑同一工作区内的上下文恢复，但当用户在同一工程中切换不同 Agent CLI，或在 Codex CLI 中切换 base URL/provider 时，外部 CLI 自带的会话目录、账户目录和本地布局往往发生变化，导致用户误以为“原来的上下文消失了”。
 
 本设计文档定义：AMS 如何把 Codex CLI、Gemini CLI、Claude Code/Claude CLI 统一视为外部来源类型，并通过“工作区主锚点 + 多信号稳定身份 + 最小必要发现元数据”的方式，保证同一工程任务在来源变化后仍可找回原有项目/任务归属。
 
@@ -168,7 +168,7 @@ AMS 的连续性恢复必须建立在稳定身份层上，而不是建立在某�
 
 AMS-002 已在 `apps/cli` 落地一个受控的本地 bridge 扩展，用于记录与列出 Agent CLI session locator metadata。该实现与本文设计保持一致，且只在以下边界内覆盖原“非目标”表述：
 
-1. 新增的是本地 CLI 命令 `agent-memory agent-sessions`，不是服务端 API，也不改变 `project -> task` 的正式语义。
+1. 新增的是本地 CLI 命令 `agent-continuity agent-sessions`，不是服务端 API，也不改变 `project -> task` 的正式语义。
 2. 新增的是 `bridge.sqlite` 本地表 `agent_session_locators`，不是 `apps/api` migration，也不引入服务端 schema 变更。
 3. 新记录只附着在既有 `workspace_bindings` 事实上；写入前必须先存在工作区 binding，locator metadata 不能反向生成新的项目/任务身份。
 4. `provider` 与 `base URL` 仍然只是可变的辅助观测字段，不是主键；同一 workspace/task 下允许记录多个 locator 来表示外部来源变化。
@@ -219,7 +219,7 @@ AMS-002 已在 `apps/cli` 落地一个受控的本地 bridge 扩展，用于记�
 
 ### M4 cross-CLI metadata discovery
 
-M4 extends discovery to `agent-memory discover codex|gemini|claude` as the first cross-CLI metadata discovery path. It can scan an explicit `--home` or source-specific home flag for candidate session locators, list metadata-only candidates, and record a selected candidate with `--record <candidate-id>` after the current workspace has been resolved.
+M4 extends discovery to `agent-continuity discover codex|gemini|claude` as the first cross-CLI metadata discovery path. It can scan an explicit `--home` or source-specific home flag for candidate session locators, list metadata-only candidates, and record a selected candidate with `--record <candidate-id>` after the current workspace has been resolved.
 
 The boundary is strict: discovery may use candidate paths, file stats, and safe top-level identifiers such as session ids or sanitized base URL origins. It must not import transcript/message/content fields, must not echo token query strings, and must not upload private session content.
 

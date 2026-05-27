@@ -81,7 +81,7 @@ export async function agentSessionsCommand(
     return listAgentSessions(args, input);
   }
 
-  input.writeStderr("Usage: agent-memory agent-sessions <record|list> [flags]\n");
+  input.writeStderr("Usage: agent-continuity agent-sessions <record|list> [flags]\n");
   return 1;
 }
 
@@ -96,7 +96,7 @@ async function recordAgentSessionLocator(
   const binding = getWorkspaceBinding(input.cwd);
 
   if (!binding) {
-    input.writeStderr("No workspace binding found. Run `agent-memory resolve` first.\n");
+    input.writeStderr("No workspace binding found. Run `agent-continuity resolve` first.\n");
     return 1;
   }
 

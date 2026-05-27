@@ -95,7 +95,7 @@ test("discover codex records selected candidate onto current workspace binding",
       resolveProject: async () => ({
         id: "prj_discover",
         name: "discover-project",
-        description: "Created by agent-memory CLI",
+        description: "Created by agent-continuity CLI",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -104,8 +104,8 @@ test("discover codex records selected candidate onto current workspace binding",
         id: "tsk_discover",
         project_id: "prj_discover",
         title: "discover-task",
-        description: "Created by agent-memory CLI",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity CLI",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -161,7 +161,7 @@ test("discover gemini and claude record into current workspace binding without l
       resolveProject: async () => ({
         id: "prj_multi",
         name: "discover-project",
-        description: "Created by agent-memory CLI",
+        description: "Created by agent-continuity CLI",
         repo_url: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -170,8 +170,8 @@ test("discover gemini and claude record into current workspace binding without l
         id: "tsk_multi",
         project_id: "prj_multi",
         title: "discover-task",
-        description: "Created by agent-memory CLI",
-        source: "agent-memory-cli",
+        description: "Created by agent-continuity CLI",
+        source: "agent-continuity-cli",
         external_ref: null,
         created_at: "2026-04-11T12:00:00.000Z",
         updated_at: "2026-04-11T12:00:00.000Z"
@@ -228,7 +228,7 @@ test("discover record fails for gemini and claude when workspace is unresolved",
     writeStderr: (chunk) => geminiWrites.push(chunk)
   });
   assert.equal(geminiExitCode, 1);
-  assert.match(geminiWrites.join(""), /Run `agent-memory resolve` first/);
+  assert.match(geminiWrites.join(""), /Run `agent-continuity resolve` first/);
 
   const claudeWrites: string[] = [];
   const claudeExitCode = await runCli(["discover", "claude", "--claude-home", claudeHome, "--record", "claude-1"], {
@@ -237,7 +237,7 @@ test("discover record fails for gemini and claude when workspace is unresolved",
     writeStderr: (chunk) => claudeWrites.push(chunk)
   });
   assert.equal(claudeExitCode, 1);
-  assert.match(claudeWrites.join(""), /Run `agent-memory resolve` first/);
+  assert.match(claudeWrites.join(""), /Run `agent-continuity resolve` first/);
 });
 
 
